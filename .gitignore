@@ -18,3 +18,15 @@ app/next-env.d.ts
 dev.err
 dev.log
 dev.error.log
+# Credentials / keys (defence in depth)
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.crt
+id_rsa
+id_ed25519
+.ssh/
+*.secret
+secrets.*
