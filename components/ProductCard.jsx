@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Icon, WaIcon } from "./icons";
 import { openLightbox } from "./Lightbox";
 import {
@@ -123,7 +124,11 @@ export function ProductCard({ p, pid, settings, taxonomy, ref }) {
             {featured ? <span className="product-featured-label">Featured</span> : null}
           </div>
         ) : null}
-        <h3>{p.name}</h3>
+        <h3>
+          <Link href={`/product/${encodeURIComponent(slug)}`} className="product-card-name">
+            {p.name}
+          </Link>
+        </h3>
         {price ? <span className="product-price">From {price}</span> : null}
         <p>{p.description || ""}</p>
         {meta.length ? (
@@ -136,6 +141,13 @@ export function ProductCard({ p, pid, settings, taxonomy, ref }) {
           </ul>
         ) : null}
         <div className="product-actions">
+          <Link
+            href={`/product/${encodeURIComponent(slug)}`}
+            className="product-details-btn"
+            aria-label={`View details for ${p.name}`}
+          >
+            <span>View details</span>
+          </Link>
           <a
             href={waHref}
             className="product-order-btn"

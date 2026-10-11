@@ -1,9 +1,7 @@
-import { WaIcon } from "./icons";
-import { waLink } from "@/lib/site";
+import { WaCta } from "./WaCta";
 
 export function HowToOrder({ label, title, rows, defaults, settings }) {
   const steps = rows && rows.length ? rows : defaults || [];
-  const waHref = waLink(settings, null);
 
   return (
     <section id="how-to-order" className="side-section fade-in">
@@ -40,17 +38,13 @@ export function HowToOrder({ label, title, rows, defaults, settings }) {
             Tell us what you&apos;re looking for and we&apos;ll help you pick a meaningful gift
             that feels personal.
           </p>
-          <a
-            href={waHref}
+          <WaCta
+            settings={settings}
             id="howto-wa"
             className="product-order-btn"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Start your order on WhatsApp"
-          >
-            <WaIcon />
-            <span>Start your order</span>
-          </a>
+            label="Start your order"
+            ariaLabel="Start your order on WhatsApp"
+          />
         </div>
       </div>
     </section>

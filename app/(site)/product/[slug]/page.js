@@ -190,10 +190,10 @@ export default async function ProductPage({ params }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="product-order-btn"
-                  aria-label={soldOut ? `Enquire on WhatsApp about ${product.name}` : `Order ${product.name} on WhatsApp`}
+                  aria-label={soldOut ? `Request a custom quote for ${product.name}` : `Order ${product.name} on WhatsApp`}
                 >
                   <WaIcon />
-                  <span>{soldOut ? "Enquire on WhatsApp" : "Order this gift"}</span>
+                  <span>{soldOut ? "Request a custom quote" : "Order this gift"}</span>
                 </a>
                 <CopyLinkButton slug={slugify(product.name)} name={product.name} />
               </div>

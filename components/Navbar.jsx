@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { WaCta } from "./WaCta";
 
-export function Navbar({ brandName, brandAccent, waHref }) {
+export function Navbar({ brandName, brandAccent, settings }) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -23,18 +24,13 @@ export function Navbar({ brandName, brandAccent, waHref }) {
           <span className="nav-tagline">Bespoke Gifts</span>
         </a>
         <div className="nav-actions">
-          <a
-            href={waHref}
+          <WaCta
+            settings={settings}
             id="nav-wa-btn"
-            target="_blank"
-            rel="noopener noreferrer"
             className="nav-wa-btn"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <use href="#icon-whatsapp" />
-            </svg>
-            <span>WhatsApp Us</span>
-          </a>
+            label="WhatsApp Us"
+            ariaLabel="Chat with Gifts by VF on WhatsApp"
+          />
         </div>
       </div>
     </nav>
