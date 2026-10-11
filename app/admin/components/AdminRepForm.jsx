@@ -19,6 +19,7 @@ export function AdminRepForm({ rep, onClose }) {
       }}
     >
       <form action={formAction} className="admin-modal-panel admin-modal-panel-narrow">
+        <input type="hidden" name="id" value={rep.id || ""} />
         <div className="admin-modal-head">
           <h2>{isNew ? "Add rep" : "Edit rep"}</h2>
           <button
@@ -53,6 +54,15 @@ export function AdminRepForm({ rep, onClose }) {
               inputMode="decimal"
               step="any"
               placeholder="e.g. 10 for 10%"
+            />
+          </label>
+          <label className="admin-field admin-field-wide">
+            Login PIN ({isNew ? "required" : "leave blank to keep current"})
+            <input
+              name="pin"
+              type="password"
+              autoComplete="new-password"
+              placeholder={isNew ? "e.g. 4+ characters" : "Set a new PIN…"}
             />
           </label>
         </div>

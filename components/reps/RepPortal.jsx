@@ -18,6 +18,7 @@ export function RepPortal({ products, commissionRule }) {
   const [step, setStep] = useState("login");
   const [rep, setRep] = useState(null);
   const [input, setInput] = useState("");
+  const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [payouts, setPayouts] = useState(null);
@@ -34,15 +35,25 @@ export function RepPortal({ products, commissionRule }) {
     e.preventDefault();
     setError("");
     const id = input.trim();
-    if (!id) {
-      setError("Please enter your rep code.");
+    const pinValue = pin.trim();
+    if (!id || !pinValue) {
+      setError("Enter your rep code and PIN.");
       return;
     }
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/reps?rep=${encodeURIComponent(id)}`, { cache: "no-store" });
-      if (res.status === 404) {
-        setError("That rep code was not found. Check with the owner.");
+      const res = await fetch("/api/reps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rep: id, pin: pinValue }),
+        cache: "no-store",
+      });
+      if (res.status === 401) {
+        setError("Invalid rep code or PIN.");
+        return;
+      }
+      if (res.status === 429) {
+        setError("Too many attempts. Please try again in a minute.");
         return;
       }
       if (!res.ok) throw new Error("login failed");
@@ -66,6 +77,7 @@ export function RepPortal({ products, commissionRule }) {
     setPayouts(null);
     setStep("login");
     setInput("");
+    setPin("");
   };
 
   const rateText = useMemo(() => {
@@ -185,8 +197,9 @@ export function RepPortal({ products, commissionRule }) {
       <section id="rep-login" className="rep-section rep-panel">
         <h2>Sales Rep Login</h2>
         <p className="rep-hint">
-          Enter the rep code the owner gave you (for example, <strong>kofi</strong>). You&apos;ll
-          get your personalised share links and commission status.
+          Enter the rep code and PIN the owner gave you (for example, code{" "}
+          <strong>kofi</strong>). You&apos;ll get your personalised share links and
+          commission status.
         </p>
         <form id="rep-form" className="rep-form" onSubmit={login}>
           <input
@@ -196,6 +209,14 @@ export function RepPortal({ products, commissionRule }) {
             autoComplete="off"
             value={input}
             onChange={(e) => setInput(e.target.value)}
+          />
+          <input
+            type="password"
+            id="rep-pin"
+            placeholder="Enter your PIN"
+            autoComplete="current-password"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
           />
           <button type="submit" className="rep-btn" disabled={submitting}>
             {submitting ? "Checking…" : "Continue"}
