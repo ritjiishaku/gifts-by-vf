@@ -15,6 +15,7 @@ import {
   priceNumber,
   slugify,
   isFeatured,
+  serializeJsonLd,
 } from "@/lib/format";
 import { TAXONOMY } from "@/lib/taxonomy";
 import { taxonomyCategoryForProduct, taxonomyProductTypeForProduct } from "@/lib/taxonomy";
@@ -120,7 +121,7 @@ export default async function ProductPage({ params }) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
 
       <section id="product-detail" className="product-detail fade-in">
         <div className="section-inner">

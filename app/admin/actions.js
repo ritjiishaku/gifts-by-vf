@@ -96,7 +96,7 @@ export async function saveProductAction(prevState, formData) {
     return { ok: true };
   } catch (err) {
     console.error("[admin] saveProduct:", err.message);
-    return internalError("Could not save the product. " + err.message);
+    return internalError("Could not save the product.");
   }
 }
 
@@ -253,7 +253,7 @@ export async function saveTestimonialAction(prevState, formData) {
     return { ok: true };
   } catch (err) {
     console.error("[admin] saveTestimonial:", err.message);
-    return internalError("Could not save the testimonial. " + err.message);
+    return internalError("Could not save the testimonial.");
   }
 }
 
@@ -284,7 +284,7 @@ async function upsertRow(table, payload) {
     return { ok: true };
   } catch (err) {
     console.error(`[admin] save ${table}:`, err.message);
-    return internalError("Could not save. " + err.message);
+    return internalError("Could not save.");
   }
 }
 

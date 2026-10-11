@@ -8,7 +8,7 @@ import {
   getFaqs,
 } from "@/lib/data";
 import { settingsFromRows, DEFAULTS, SITE_URL } from "@/lib/site";
-import { filterAndSort, priceNumber, isSoldOut, directImageUrl, validateUrl, slugify } from "@/lib/format";
+import { filterAndSort, priceNumber, isSoldOut, directImageUrl, validateUrl, slugify, serializeJsonLd } from "@/lib/format";
 import { TAXONOMY } from "@/lib/taxonomy";
 import { Hero } from "@/components/Hero";
 import { Catalogue } from "@/components/Catalogue";
@@ -85,7 +85,7 @@ export default async function HomePage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(itemListJsonLd) }}
       />
       <Hero settings={settings} products={products} taxonomy={TAXONOMY} />
 

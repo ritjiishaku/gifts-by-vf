@@ -1,11 +1,11 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ReferralBanner } from "@/components/ReferralBanner";
-import { getSettings, getReps } from "@/lib/data";
+import { getSettings, getPublicReps } from "@/lib/data";
 import { settingsFromRows } from "@/lib/site";
 
 export default async function SiteLayout({ children }) {
-  const [settingsRows, reps] = await Promise.all([getSettings(), getReps()]);
+  const [settingsRows, reps] = await Promise.all([getSettings(), getPublicReps()]);
   const settings = settingsFromRows(settingsRows);
 
   return (

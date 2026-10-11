@@ -8,18 +8,18 @@ import {
   isSoldOut,
   directImageUrl,
   validateUrl,
-  isActiveRep,
 } from "@/lib/format";
 
 const REP_PAYOUT_LIMIT = 5;
 const REP_CREDIT_WINDOW_DAYS = 30;
 const SESSION_KEY = "vf_rep_session";
 
-export function RepPortal({ reps, products, commissionRule }) {
+export function RepPortal({ products, commissionRule }) {
   const [step, setStep] = useState("login");
   const [rep, setRep] = useState(null);
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [payouts, setPayouts] = useState(null);
   const [payoutsError, setPayoutsError] = useState("");
   const [payoutShown, setPayoutShown] = useState(REP_PAYOUT_LIMIT);
@@ -30,17 +30,7 @@ export function RepPortal({ reps, products, commissionRule }) {
     if (saved) setInput(saved);
   }, []);
 
-  const findRep = (repId) => {
-    const key = String(repId || "").trim().toLowerCase();
-    if (!key) return null;
-    return (
-      (reps || []).find(
-        (r) => isActiveRep(r) && String(r.rep_id || "").trim().toLowerCase() === key
-      ) || null
-    );
-  };
-
-  const login = (e) => {
+  const login = async (e) => {
     e.preventDefault();
     setError("");
     const id = input.trim();
@@ -48,15 +38,26 @@ export function RepPortal({ reps, products, commissionRule }) {
       setError("Please enter your rep code.");
       return;
     }
-    const found = findRep(id);
-    if (!found) {
-      setError("That rep code was not found. Check with the owner.");
-      return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/reps?rep=${encodeURIComponent(id)}`, { cache: "no-store" });
+      if (res.status === 404) {
+        setError("That rep code was not found. Check with the owner.");
+        return;
+      }
+      if (!res.ok) throw new Error("login failed");
+      const json = await res.json();
+      const found = json.rep || {};
+      setRep({ rep_id: found.rep_id, name: found.name, rate: found.commission_rate });
+      setPayoutsError("");
+      setPayouts(Array.isArray(json.payouts) ? json.payouts : []);
+      sessionStorage.setItem(SESSION_KEY, found.rep_id);
+      setStep("dashboard");
+    } catch (err) {
+      setError("Could not sign you in right now. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
-    setRep({ rep_id: found.rep_id, name: found.name, rate: found.commission_rate });
-    sessionStorage.setItem(SESSION_KEY, found.rep_id);
-    setStep("dashboard");
-    loadPayouts(found.rep_id);
   };
 
   const logout = () => {
@@ -65,19 +66,6 @@ export function RepPortal({ reps, products, commissionRule }) {
     setPayouts(null);
     setStep("login");
     setInput("");
-  };
-
-  const loadPayouts = async (repId) => {
-    setPayoutsError("");
-    setPayouts(null);
-    try {
-      const res = await fetch(`/api/reps?rep=${encodeURIComponent(repId)}`, { cache: "no-store" });
-      if (!res.ok) throw new Error("load failed");
-      const json = await res.json();
-      setPayouts(json.payouts || []);
-    } catch (err) {
-      setPayoutsError("Could not load your payout history right now. Please refresh and try again.");
-    }
   };
 
   const rateText = useMemo(() => {
@@ -209,7 +197,9 @@ export function RepPortal({ reps, products, commissionRule }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
-          <button type="submit" className="rep-btn">Continue</button>
+          <button type="submit" className="rep-btn" disabled={submitting}>
+            {submitting ? "Checking…" : "Continue"}
+          </button>
         </form>
         <p id="rep-error" className={`rep-error${error ? "" : " hidden"}`}>{error}</p>
       </section>

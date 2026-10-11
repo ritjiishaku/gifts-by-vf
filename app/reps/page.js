@@ -1,4 +1,4 @@
-import { getReps, getProducts, getSettings } from "@/lib/data";
+import { getProducts, getSettings } from "@/lib/data";
 import { settingsFromRows } from "@/lib/site";
 import { filterAndSort } from "@/lib/format";
 import { RepPortal } from "@/components/reps/RepPortal";
@@ -6,8 +6,7 @@ import { RepPortal } from "@/components/reps/RepPortal";
 export const revalidate = 60;
 
 export default async function RepsPage() {
-  const [reps, productRows, settingsRows] = await Promise.all([
-    getReps(),
+  const [productRows, settingsRows] = await Promise.all([
     getProducts(),
     getSettings(),
   ]);
@@ -30,7 +29,7 @@ export default async function RepsPage() {
         </div>
       </section>
 
-      <RepPortal reps={reps} products={products} commissionRule={commissionRule} />
+      <RepPortal products={products} commissionRule={commissionRule} />
     </>
   );
 }
