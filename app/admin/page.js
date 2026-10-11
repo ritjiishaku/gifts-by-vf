@@ -16,12 +16,28 @@ export default async function AdminPage() {
     );
   }
 
-  const [settings, products, reps, testimonials] = await Promise.all([
-    getSettings(),
-    getAll("products"),
-    getReps(),
-    getAll("testimonials"),
-  ]);
+  const [settings, products, reps, testimonials, portfolio, whyUs, howTo, faqs] =
+    await Promise.all([
+      getSettings(),
+      getAll("products"),
+      getReps(),
+      getAll("testimonials"),
+      getAll("portfolio"),
+      getAll("why_us"),
+      getAll("how_to_order"),
+      getAll("faqs"),
+    ]);
 
-  return <AdminDashboard settings={settings} products={products} reps={reps} testimonials={testimonials} />;
+  return (
+    <AdminDashboard
+      settings={settings}
+      products={products}
+      reps={reps}
+      testimonials={testimonials}
+      portfolio={portfolio}
+      whyUs={whyUs}
+      howTo={howTo}
+      faqs={faqs}
+    />
+  );
 }

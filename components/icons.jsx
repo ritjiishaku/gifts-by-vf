@@ -48,6 +48,8 @@ const PATHS = {
   ),
 };
 
+export const ICON_NAMES = Object.keys(PATHS);
+
 export function Icon({ name, className = "icon", size }) {
   const path = PATHS[String(name || "").trim().toLowerCase()] || PATHS.star;
   return (

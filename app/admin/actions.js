@@ -272,3 +272,113 @@ export async function deleteTestimonialAction(formData) {
     return internalError("Could not delete the testimonial.");
   }
 }
+
+/* ── Shared helpers for simple content rows (Why us / Portfolio / How to order / FAQ) ── */
+
+async function upsertRow(table, payload) {
+  try {
+    const { error } = await supabase().from(table).upsert(payload, { onConflict: "id" });
+    if (error) throw error;
+    revalidatePath("/admin");
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (err) {
+    console.error(`[admin] save ${table}:`, err.message);
+    return internalError("Could not save. " + err.message);
+  }
+}
+
+async function deleteRow(table, formData) {
+  if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
+  const id = Number(formData.get("id")) || null;
+  if (!id) return internalError("Missing id.");
+  try {
+    const { error } = await supabase().from(table).delete().eq("id", id);
+    if (error) throw error;
+    revalidatePath("/admin");
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (err) {
+    console.error(`[admin] delete ${table}:`, err.message);
+    return internalError("Could not delete.");
+  }
+}
+
+export async function saveWhyUsAction(prevState, formData) {
+  if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
+  const title = (formData.get("title") || "").toString().trim();
+  const description = (formData.get("description") || "").toString().trim();
+  if (!title) return internalError("Heading is required.");
+  if (!description) return internalError("Description is required.");
+  return upsertRow("why_us", {
+    id: Number((formData.get("id") || "").toString().trim()) || undefined,
+    title,
+    heading: title,
+    description,
+    icon: (formData.get("icon") || "").toString().trim() || null,
+    display_order: Number(formData.get("display_order")) || 999,
+    is_visible: toBool(formData, "is_visible"),
+  });
+}
+
+export async function deleteWhyUsAction(formData) {
+  return deleteRow("why_us", formData);
+}
+
+export async function savePortfolioAction(prevState, formData) {
+  if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
+  const imageUrl = (formData.get("image_url") || "").toString().trim();
+  const caption = (formData.get("caption") || "").toString().trim();
+  if (!imageUrl && !caption) return internalError("Add an image URL or a caption.");
+  return upsertRow("portfolio", {
+    id: Number((formData.get("id") || "").toString().trim()) || undefined,
+    image_url: imageUrl || null,
+    caption: caption || null,
+    category: (formData.get("category") || "").toString().trim() || null,
+    is_wide: toBool(formData, "is_wide"),
+    display_order: Number(formData.get("display_order")) || 999,
+    is_visible: toBool(formData, "is_visible"),
+  });
+}
+
+export async function deletePortfolioAction(formData) {
+  return deleteRow("portfolio", formData);
+}
+
+export async function saveHowToAction(prevState, formData) {
+  if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
+  const title = (formData.get("title") || "").toString().trim();
+  const description = (formData.get("description") || "").toString().trim();
+  if (!title) return internalError("Step title is required.");
+  if (!description) return internalError("Step description is required.");
+  return upsertRow("how_to_order", {
+    id: Number((formData.get("id") || "").toString().trim()) || undefined,
+    title,
+    description,
+    display_order: Number(formData.get("display_order")) || 999,
+    is_visible: toBool(formData, "is_visible"),
+  });
+}
+
+export async function deleteHowToAction(formData) {
+  return deleteRow("how_to_order", formData);
+}
+
+export async function saveFaqAction(prevState, formData) {
+  if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
+  const question = (formData.get("question") || "").toString().trim();
+  const answer = (formData.get("answer") || "").toString().trim();
+  if (!question) return internalError("Question is required.");
+  if (!answer) return internalError("Answer is required.");
+  return upsertRow("faqs", {
+    id: Number((formData.get("id") || "").toString().trim()) || undefined,
+    question,
+    answer,
+    display_order: Number(formData.get("display_order")) || 999,
+    is_visible: toBool(formData, "is_visible"),
+  });
+}
+
+export async function deleteFaqAction(formData) {
+  return deleteRow("faqs", formData);
+}

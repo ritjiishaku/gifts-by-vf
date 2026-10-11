@@ -6,17 +6,27 @@ import {
   deleteProductAction,
   deleteRepAction,
   deleteTestimonialAction,
+  deleteWhyUsAction,
+  deletePortfolioAction,
+  deleteHowToAction,
+  deleteFaqAction,
   saveSettingAction,
   saveSettingsAction,
   deleteSettingAction,
 } from "../actions";
 import { SETTINGS_GROUPS } from "@/lib/settings-schema";
 import { DEFAULTS } from "@/lib/site";
+import { Icon } from "@/components/icons";
 import { AdminProductForm } from "./AdminProductForm";
 import { AdminRepForm } from "./AdminRepForm";
 import { AdminTestimonialsForm } from "./AdminTestimonialsForm";
+import { AdminWhyUsForm } from "./AdminWhyUsForm";
+import { AdminPortfolioForm } from "./AdminPortfolioForm";
+import { AdminHowToForm } from "./AdminHowToForm";
+import { AdminFaqForm } from "./AdminFaqForm";
+import { ContentRowsPanel } from "./ContentRowsPanel";
 
-export function AdminDashboard({ settings, products, reps, testimonials }) {
+export function AdminDashboard({ settings, products, reps, testimonials, whyUs, portfolio, howTo, faqs }) {
   const [tab, setTab] = useState("settings");
   const [query, setQuery] = useState("");
   const [testimonialQuery, setTestimonialQuery] = useState("");
@@ -77,6 +87,10 @@ export function AdminDashboard({ settings, products, reps, testimonials }) {
           ["products", `Products (${(products || []).length})`],
           ["reps", `Sales reps (${(reps || []).length})`],
           ["testimonials", `Testimonials (${(testimonials || []).length})`],
+          ["portfolio", `Portfolio (${(portfolio || []).length})`],
+          ["whyUs", `Why us (${(whyUs || []).length})`],
+          ["howTo", `How to order (${(howTo || []).length})`],
+          ["faqs", `FAQ (${(faqs || []).length})`],
         ].map(([key, label]) => (
           <button
             key={key}
@@ -279,6 +293,84 @@ export function AdminDashboard({ settings, products, reps, testimonials }) {
         </div>
       ) : null}
 
+      {tab === "portfolio" ? (
+        <ContentRowsPanel
+          rows={portfolio}
+          addLabel="+ Add piece"
+          emptyText="No portfolio pieces yet."
+          confirmText={(r) => `Delete “${r.caption || "this portfolio piece"}”?`}
+          deleteAction={deletePortfolioAction}
+          renderThumb={(row) =>
+            row.image_url ? (
+              <img src={row.image_url} alt="" loading="lazy" />
+            ) : (
+              String(row.caption || "P").charAt(0).toUpperCase()
+            )
+          }
+          renderInfo={(row) => (
+            <>
+              <h4>{row.caption || "Untitled piece"}</h4>
+              <p>{[row.category, row.is_wide ? "wide tile" : ""].filter(Boolean).join(" · ") || "No category"}</p>
+            </>
+          )}
+          renderForm={({ row, onClose }) => <AdminPortfolioForm row={row} onClose={onClose} />}
+        />
+      ) : null}
+
+      {tab === "whyUs" ? (
+        <ContentRowsPanel
+          rows={whyUs}
+          addLabel="+ Add card"
+          emptyText="No “Why us” cards yet."
+          confirmText={(r) => `Delete “${r.title || r.heading || "this card"}”?`}
+          deleteAction={deleteWhyUsAction}
+          renderThumb={(row) => <Icon name={String(row.icon || "").trim().toLowerCase()} size={26} />}
+          renderInfo={(row) => (
+            <>
+              <h4>{row.title || row.heading || "Untitled"}</h4>
+              <p>{row.description || ""}</p>
+            </>
+          )}
+          renderForm={({ row, onClose }) => <AdminWhyUsForm row={row} onClose={onClose} />}
+        />
+      ) : null}
+
+      {tab === "howTo" ? (
+        <ContentRowsPanel
+          rows={howTo}
+          addLabel="+ Add step"
+          emptyText="No custom steps yet — the site falls back to the built-in steps."
+          confirmText={(r) => `Delete step “${r.title || "Untitled"}”?`}
+          deleteAction={deleteHowToAction}
+          renderThumb={(_row, i) => i + 1}
+          renderInfo={(row) => (
+            <>
+              <h4>{row.title || "Untitled step"}</h4>
+              <p>{row.description || ""}</p>
+            </>
+          )}
+          renderForm={({ row, onClose }) => <AdminHowToForm row={row} onClose={onClose} />}
+        />
+      ) : null}
+
+      {tab === "faqs" ? (
+        <ContentRowsPanel
+          rows={faqs}
+          addLabel="+ Add FAQ"
+          emptyText="No FAQs yet."
+          confirmText={(r) => `Delete FAQ “${r.question || "this item"}”?`}
+          deleteAction={deleteFaqAction}
+          renderThumb={(row) => String(row.question || "?").charAt(0).toUpperCase()}
+          renderInfo={(row) => (
+            <>
+              <h4>{row.question || "Untitled question"}</h4>
+              <p>{row.answer || ""}</p>
+            </>
+          )}
+          renderForm={({ row, onClose }) => <AdminFaqForm row={row} onClose={onClose} />}
+        />
+      ) : null}
+
       {editingProduct || addingProduct ? (
         <AdminProductForm
           product={editingProduct || { is_visible: true, in_stock: true, featured: false }}
@@ -425,18 +517,16 @@ function EditSettingRow({ row }) {
         <button type="submit" className="admin-btn">
           Save
         </button>
-        <form action={deleteSettingAction}>
-          <input type="hidden" name="key" value={row.key} />
-          <button
-            type="submit"
-            className="admin-btn admin-btn-danger"
-            onClick={(e) => {
-              if (!window.confirm(`Delete setting "${row.key}"?`)) e.preventDefault();
-            }}
-          >
-            Delete
-          </button>
-        </form>
+        <button
+          type="submit"
+          formAction={deleteSettingAction}
+          className="admin-btn admin-btn-danger"
+          onClick={(e) => {
+            if (!window.confirm(`Delete setting "${row.key}"?`)) e.preventDefault();
+          }}
+        >
+          Delete
+        </button>
       </div>
       {state?.error ? <p className="rep-error">{state.error}</p> : null}
     </form>

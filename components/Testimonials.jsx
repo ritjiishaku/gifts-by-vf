@@ -5,7 +5,7 @@ import { starRating } from "@/lib/format";
 
 const TESTIMONIAL_LIMIT = 6;
 
-export function Testimonials({ label, title, rows }) {
+export function Testimonials({ label, title, rows, moreLabel }) {
   const [expanded, setExpanded] = useState(false);
 
   if (!rows || rows.length === 0) return null;
@@ -49,7 +49,7 @@ export function Testimonials({ label, title, rows }) {
             aria-expanded={expanded}
             onClick={() => setExpanded(true)}
           >
-            See more from our customers
+            {moreLabel || "See more from our customers"}
           </button>
         </div>
       </div>

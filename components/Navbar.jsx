@@ -21,14 +21,14 @@ export function Navbar({ brandName, brandAccent, settings }) {
             <span className="brand-text">{brandName || "Gifts by V"}</span>
             <span className="brand-accent">{brandAccent || "F"}</span>
           </span>
-          <span className="nav-tagline">Bespoke Gifts</span>
+          <span className="nav-tagline">{settings.nav_tagline || "Bespoke Gifts"}</span>
         </a>
         <div className="nav-actions">
           <WaCta
             settings={settings}
             id="nav-wa-btn"
             className="nav-wa-btn"
-            label="WhatsApp Us"
+            label={settings.nav_wa_label || "WhatsApp Us"}
             ariaLabel="Chat with Gifts by VF on WhatsApp"
           />
         </div>

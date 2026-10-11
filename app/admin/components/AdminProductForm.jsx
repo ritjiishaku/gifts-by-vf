@@ -2,6 +2,7 @@
 
 import { useEffect, useActionState } from "react";
 import { saveProductAction } from "../actions";
+import { IconPicker } from "./IconPicker";
 
 export function AdminProductForm({ product, onClose }) {
   const [state, formAction] = useActionState(saveProductAction, {});
@@ -81,10 +82,11 @@ export function AdminProductForm({ product, onClose }) {
             Stock label (when sold out)
             <input name="stock_label" defaultValue={product.stock_label || ""} placeholder="e.g. Pre-Order Only" />
           </label>
-          <label className="admin-field">
-            Icon key (optional)
-            <input name="icon" defaultValue={product.icon || ""} placeholder="e.g. gift, jewelry, acrylic" />
-          </label>
+          <IconPicker
+            name="icon"
+            value={product.icon}
+            hint="Optional — the glyph shown on the product card."
+          />
           <label className="admin-field admin-field-wide">
             Image URL
             <input name="image_url" defaultValue={product.image_url || ""} placeholder="Paste an image link (Google Drive or website)" />

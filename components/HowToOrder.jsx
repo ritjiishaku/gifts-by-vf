@@ -2,6 +2,18 @@ import { WaCta } from "./WaCta";
 
 export function HowToOrder({ label, title, rows, defaults, settings }) {
   const steps = rows && rows.length ? rows : defaults || [];
+  const badges = String(settings.howto_badges || "")
+    .split("\n")
+    .map((b) => b.trim())
+    .filter(Boolean);
+  const kicker = settings.howto_kicker || "Easy gifting flow";
+  const summary =
+    settings.howto_summary ||
+    "Choose a gift, share the details, and we'll make the rest simple.";
+  const ctaText =
+    settings.howto_cta_text ||
+    "Tell us what you're looking for and we'll help you pick a meaningful gift that feels personal.";
+  const ctaLabel = settings.howto_cta_label || "Start your order";
 
   return (
     <section id="how-to-order" className="side-section fade-in">
@@ -12,14 +24,14 @@ export function HowToOrder({ label, title, rows, defaults, settings }) {
         </div>
 
         <div className="howto-intro fade-in">
-          <p className="howto-kicker">Easy gifting flow</p>
-          <p className="howto-summary">Choose a gift, share the details, and we&apos;ll make the rest simple.</p>
+          <p className="howto-kicker">{kicker}</p>
+          <p className="howto-summary">{summary}</p>
         </div>
 
         <div className="howto-badges fade-in" aria-label="How the ordering process works">
-          <span>Pick your gift</span>
-          <span>Share your details</span>
-          <span>Approve &amp; order</span>
+          {badges.map((badge) => (
+            <span key={badge}>{badge}</span>
+          ))}
         </div>
 
         <ol className="steps fade-in" id="howto-grid">
@@ -34,15 +46,12 @@ export function HowToOrder({ label, title, rows, defaults, settings }) {
           ))}
         </ol>
         <div className="steps-cta fade-in">
-          <p>
-            Tell us what you&apos;re looking for and we&apos;ll help you pick a meaningful gift
-            that feels personal.
-          </p>
+          <p>{ctaText}</p>
           <WaCta
             settings={settings}
             id="howto-wa"
             className="product-order-btn"
-            label="Start your order"
+            label={ctaLabel}
             ariaLabel="Start your order on WhatsApp"
           />
         </div>

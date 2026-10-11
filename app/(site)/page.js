@@ -104,7 +104,7 @@ export default async function HomePage() {
         label={settings.testimonials_label}
         title={settings.testimonials_title}
         rows={testimonials}
-        settings={settings}
+        moreLabel={settings.testimonials_more_label}
       />
       <HowToOrder
         label={settings.howto_label}
