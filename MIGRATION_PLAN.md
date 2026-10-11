@@ -7,7 +7,7 @@ checkout) into a modern Next.js application with a Supabase database and a custo
 admin CMS, restyled mobile-first with Tailwind CSS. Preserve the existing design,
 copy, and behavior.
 
-- **Live site (new):** https://giftbyvf.vercel.app/
+- **Live site (new):** https://giftsbyvf.vercel.app/
 - **Old domain (to be replaced everywhere):** https://vf-gift-shop.vercel.app
 
 ---
@@ -162,7 +162,7 @@ faqs(
 Create `.env.local` (gitignored) and `.env.example` (committed):
 
 ```
-NEXT_PUBLIC_SITE_URL=https://giftbyvf.vercel.app
+NEXT_PUBLIC_SITE_URL=https://giftsbyvf.vercel.app
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
@@ -251,4 +251,4 @@ SQL migrations, env examples. Old HTML/CSS/JS removed once parity is confirmed.
 ## Open Items
 
 - Provide Supabase project URL + keys at Phase 2.
-- Confirm final domain remains `https://giftbyvf.vercel.app` before go-live.
+- Confirm final domain remains `https://giftsbyvf.vercel.app` before go-live.
