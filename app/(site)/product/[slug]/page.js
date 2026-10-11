@@ -26,7 +26,7 @@ import { ProductCard } from "@/components/ProductCard";
 export const revalidate = 60;
 
 export async function generateMetadata({ params }) {
-  const slug = params.slug;
+  const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product) return {};
   const image = validateUrl(directImageUrl(product.image_url));
@@ -53,7 +53,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ProductPage({ params }) {
-  const slug = params.slug;
+  const { slug } = await params;
   const [product, settingsRows, allProducts] = await Promise.all([
     getProductBySlug(slug),
     getSettings(),
