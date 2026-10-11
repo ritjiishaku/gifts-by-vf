@@ -16,6 +16,7 @@ import {
   slugify,
   isFeatured,
   serializeJsonLd,
+  ogImage,
 } from "@/lib/format";
 import { TAXONOMY } from "@/lib/taxonomy";
 import { taxonomyCategoryForProduct, taxonomyProductTypeForProduct } from "@/lib/taxonomy";
@@ -30,6 +31,10 @@ export async function generateMetadata({ params }) {
   const product = await getProductBySlug(slug);
   if (!product) return {};
   const image = validateUrl(directImageUrl(product.image_url));
+  const og = ogImage(image);
+  const ogImages = og
+    ? [{ url: og.url, width: og.width, height: og.height, alt: product.name }]
+    : undefined;
   const description = product.description || "";
   const title = product.name;
   return {
@@ -41,13 +46,13 @@ export async function generateMetadata({ params }) {
       description,
       type: "website",
       url: `/product/${slug}`,
-      images: image ? [{ url: image }] : undefined,
+      images: ogImages,
     },
     twitter: {
-      card: image ? "summary_large_image" : "summary",
+      card: og ? "summary_large_image" : "summary",
       title,
       description: description || undefined,
-      images: image ? [image] : undefined,
+      images: og ? [og.url] : undefined,
     },
   };
 }

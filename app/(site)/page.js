@@ -7,8 +7,8 @@ import {
   getHowToOrder,
   getFaqs,
 } from "@/lib/data";
-import { settingsFromRows, DEFAULTS, SITE_URL } from "@/lib/site";
-import { filterAndSort, priceNumber, isSoldOut, directImageUrl, validateUrl, slugify, serializeJsonLd } from "@/lib/format";
+import { settingsFromRows, DEFAULTS, SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/site";
+import { filterAndSort, priceNumber, isSoldOut, directImageUrl, validateUrl, slugify, serializeJsonLd, siteImageUrl, ogImage } from "@/lib/format";
 import { TAXONOMY } from "@/lib/taxonomy";
 import { Hero } from "@/components/Hero";
 import { Catalogue } from "@/components/Catalogue";
@@ -21,21 +21,27 @@ import { Faq } from "@/components/Faq";
 
 export const revalidate = 60;
 
-const DEFAULT_HERO_IMAGE = "https://lh3.googleusercontent.com/d/1I2iMEg47s7_ik0trBhvqbgrJIBQmFIBB";
-
 export async function generateMetadata() {
   const rows = await getSettings();
   const settings = settingsFromRows(rows);
   const title = settings.site_title || `${DEFAULTS.brand_name}${DEFAULTS.brand_accent} — ${DEFAULTS.hero_title}`;
+  const description = settings.hero_desc || DEFAULTS.hero_desc;
+  const og = ogImage(siteImageUrl(settings.hero_image_url) || DEFAULT_OG_IMAGE);
   return {
     title,
-    description: settings.hero_desc || DEFAULTS.hero_desc,
+    description,
     alternates: { canonical: "/" },
     openGraph: {
       title,
-      description: settings.hero_desc || DEFAULTS.hero_desc,
+      description,
       url: "/",
-      images: [{ url: DEFAULT_HERO_IMAGE }],
+      images: og ? [{ url: og.url, width: og.width, height: og.height, alt: title }] : undefined,
+    },
+    twitter: {
+      card: og ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: og ? [og.url] : undefined,
     },
   };
 }
