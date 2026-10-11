@@ -35,7 +35,16 @@ export async function generateMetadata() {
       title,
       description,
       url: "/",
-      images: og ? [{ url: og.url, width: og.width, height: og.height, alt: title }] : undefined,
+      images: og
+        ? [
+            {
+              url: og.url,
+              alt: title,
+              ...(og.width ? { width: og.width, height: og.height } : {}),
+              ...(og.type ? { type: og.type } : {}),
+            },
+          ]
+        : undefined,
     },
     twitter: {
       card: og ? "summary_large_image" : "summary",

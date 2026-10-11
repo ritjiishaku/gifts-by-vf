@@ -5,7 +5,14 @@ import { ogImage } from "@/lib/format";
 
 const og = ogImage(DEFAULT_OG_IMAGE);
 const ogImages = og
-  ? [{ url: og.url, width: og.width, height: og.height, alt: `${SITE_NAME} — ${SITE_TAGLINE}` }]
+  ? [
+      {
+        url: og.url,
+        alt: `${SITE_NAME} — ${SITE_TAGLINE}`,
+        ...(og.width ? { width: og.width, height: og.height } : {}),
+        ...(og.type ? { type: og.type } : {}),
+      },
+    ]
   : undefined;
 
 export const metadata = {
@@ -44,6 +51,11 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap"
         />
+        <noscript>
+          {/* Without JS the IntersectionObserver reveal never runs; make sure
+              .fade-in content is visible instead of stuck at opacity:0. */}
+          <style>{`.fade-in{opacity:1 !important;transform:none !important;}`}</style>
+        </noscript>
       </head>
       <body>
         <svg xmlns="http://www.w3.org/2000/svg" style={{ display: "none" }}>

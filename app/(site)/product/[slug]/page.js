@@ -33,7 +33,14 @@ export async function generateMetadata({ params }) {
   const image = validateUrl(directImageUrl(product.image_url));
   const og = ogImage(image);
   const ogImages = og
-    ? [{ url: og.url, width: og.width, height: og.height, alt: product.name }]
+    ? [
+        {
+          url: og.url,
+          alt: product.name,
+          ...(og.width ? { width: og.width, height: og.height } : {}),
+          ...(og.type ? { type: og.type } : {}),
+        },
+      ]
     : undefined;
   const description = product.description || "";
   const title = product.name;
