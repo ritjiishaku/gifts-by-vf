@@ -40,7 +40,7 @@ The sheet exposes a set of named tabs that the site fetches and renders client-s
 | Tab | Purpose |
 |---|---|
 | `Site Settings` | Site title, brand, hero copy, section labels, WhatsApp number |
-| `Products` | Name, description, image URL, optional video URL, price, category, order, visibility, stock, occasion, featured, material/size/turnaround/delivery/payment notes, sales caption |
+| `Products` | Name, description, image URL, optional video URL, price, category, order, visibility, stock, occasion, featured, material/size/processing time/delivery/payment notes, sales caption |
 | `Sales Reps` | `rep_id`, name, commission rate, active flag |
 | `Payouts` | Order/commission records used by the rep tools |
 | `Testimonials` | Quote, name, source, star rating |

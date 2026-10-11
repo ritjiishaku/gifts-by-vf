@@ -5,6 +5,7 @@ import {
   logoutAction,
   deleteProductAction,
   deleteRepAction,
+  deleteTestimonialAction,
   saveSettingAction,
   saveSettingsAction,
   deleteSettingAction,
@@ -13,13 +14,17 @@ import { SETTINGS_GROUPS } from "@/lib/settings-schema";
 import { DEFAULTS } from "@/lib/site";
 import { AdminProductForm } from "./AdminProductForm";
 import { AdminRepForm } from "./AdminRepForm";
+import { AdminTestimonialsForm } from "./AdminTestimonialsForm";
 
-export function AdminDashboard({ settings, products, reps }) {
+export function AdminDashboard({ settings, products, reps, testimonials }) {
   const [tab, setTab] = useState("settings");
   const [query, setQuery] = useState("");
+  const [testimonialQuery, setTestimonialQuery] = useState("");
   const [editingProduct, setEditingProduct] = useState(null);
   const [addingProduct, setAddingProduct] = useState(false);
   const [editingRep, setEditingRep] = useState(null);
+  const [editingTestimonial, setEditingTestimonial] = useState(null);
+  const [addingTestimonial, setAddingTestimonial] = useState(false);
 
   const filtered = useMemo(() => {
     const q = String(query || "").trim().toLowerCase();
@@ -32,9 +37,22 @@ export function AdminDashboard({ settings, products, reps }) {
     );
   }, [products, query]);
 
+  const filteredTestimonials = useMemo(() => {
+    const q = String(testimonialQuery || "").trim().toLowerCase();
+    if (!q) return testimonials || [];
+    return (testimonials || []).filter((t) =>
+      [t.name, t.source, t.quote].join(" ").toLowerCase().includes(q)
+    );
+  }, [testimonials, testimonialQuery]);
+
   const closeProductForm = () => {
     setEditingProduct(null);
     setAddingProduct(false);
+  };
+
+  const closeTestimonialForm = () => {
+    setEditingTestimonial(null);
+    setAddingTestimonial(false);
   };
 
   return (
@@ -43,7 +61,7 @@ export function AdminDashboard({ settings, products, reps }) {
         <div>
           <h2>Dashboard</h2>
           <p className="admin-intro">
-            Manage site settings, products and sales reps. Changes go live immediately.
+            Manage site settings, products, sales reps and testimonials. Changes go live immediately.
           </p>
         </div>
         <form action={logoutAction}>
@@ -58,6 +76,7 @@ export function AdminDashboard({ settings, products, reps }) {
           ["settings", `Settings (${(settings || []).length})`],
           ["products", `Products (${(products || []).length})`],
           ["reps", `Sales reps (${(reps || []).length})`],
+          ["testimonials", `Testimonials (${(testimonials || []).length})`],
         ].map(([key, label]) => (
           <button
             key={key}
@@ -68,6 +87,7 @@ export function AdminDashboard({ settings, products, reps }) {
             onClick={() => {
               setTab(key);
               setQuery("");
+              setTestimonialQuery("");
             }}
           >
             {label}
@@ -195,6 +215,70 @@ export function AdminDashboard({ settings, products, reps }) {
         </div>
       ) : null}
 
+      {tab === "testimonials" ? (
+        <div>
+          <div className="admin-toolbar">
+            <input
+              type="search"
+              value={testimonialQuery}
+              onChange={(e) => setTestimonialQuery(e.target.value)}
+              placeholder="Search testimonials by name, source or message…"
+              className="admin-search"
+              aria-label="Search testimonials"
+            />
+            <button
+              type="button"
+              className="admin-btn"
+              onClick={() => setAddingTestimonial(true)}
+            >
+              + Add testimonial
+            </button>
+          </div>
+
+          <div className="admin-list">
+            {filteredTestimonials.map((t) => (
+              <div key={t.id} className="admin-row">
+                <div className="admin-row-thumb">
+                  {String(t.name || "?").charAt(0).toUpperCase()}
+                </div>
+                <div className="admin-row-info">
+                  <h4>{t.name || "Anonymous"}</h4>
+                  <p>{[t.source, t.rating ? `${t.rating}★` : "no rating"].filter(Boolean).join(" · ")}</p>
+                  <blockquote className="admin-row-quote">“{t.quote || ""}”</blockquote>
+                </div>
+                <div className="admin-tags">
+                  <span className="admin-tag">{t.is_visible ? "visible" : "hidden"}</span>
+                </div>
+                <div className="admin-actions">
+                  <button
+                    type="button"
+                    className="admin-btn"
+                    onClick={() => setEditingTestimonial(t)}
+                  >
+                    Edit
+                  </button>
+                  <form action={deleteTestimonialAction} className="inline">
+                    <input type="hidden" name="id" value={t.id} />
+                    <button
+                      type="submit"
+                      className="admin-btn admin-btn-danger"
+                      onClick={(e) => {
+                        if (!window.confirm(`Delete testimonial from "${t.name || "unknown"}"?`)) e.preventDefault();
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </form>
+                </div>
+              </div>
+            ))}
+            {filteredTestimonials.length === 0 ? (
+              <p className="rep-empty">No testimonials yet{testimonialQuery ? ` for “${testimonialQuery}”` : ""}.</p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
       {editingProduct || addingProduct ? (
         <AdminProductForm
           product={editingProduct || { is_visible: true, in_stock: true, featured: false }}
@@ -203,6 +287,13 @@ export function AdminDashboard({ settings, products, reps }) {
       ) : null}
 
       {editingRep ? <AdminRepForm rep={editingRep} onClose={() => setEditingRep(null)} /> : null}
+
+      {editingTestimonial || addingTestimonial ? (
+        <AdminTestimonialsForm
+          testimonial={editingTestimonial || { is_visible: true }}
+          onClose={closeTestimonialForm}
+        />
+      ) : null}
     </section>
   );
 }

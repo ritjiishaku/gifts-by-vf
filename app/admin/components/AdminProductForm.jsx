@@ -70,7 +70,7 @@ export function AdminProductForm({ product, onClose }) {
             <input name="size" defaultValue={product.size || ""} placeholder="e.g. 45cm chain" />
           </label>
           <label className="admin-field">
-            Turnaround
+            Processing time
             <input name="turnaround" defaultValue={product.turnaround || ""} placeholder="e.g. 3–5 working days" />
           </label>
           <label className="admin-field">

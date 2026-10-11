@@ -22,13 +22,6 @@ const PRODUCT_LIMIT = 12;
 const CATEGORY_PRODUCT_LIMIT = 6;
 const CATEGORY_PRODUCT_CHUNK = 6;
 
-const PRICE_RANGES = [
-  ["any", "Any price"],
-  ["under-20000", "Under ₦20,000"],
-  ["20000-50000", "₦20,000 – ₦50,000"],
-  ["above-50000", "Above ₦50,000"],
-];
-
 const SEARCH_ICON = (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1113.5 9.5 4.5 4.5 0 019 14z" />
@@ -46,8 +39,6 @@ export function Catalogue({ products, taxonomy, settings }) {
   const [activeSubcategory, setActiveSubcategory] = useState("all");
   const [activeProductType, setActiveProductType] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeOccasion, setActiveOccasion] = useState("all");
-  const [priceRange, setPriceRange] = useState("any");
   const [sort, setSort] = useState("featured");
   const [shownByGroup, setShownByGroup] = useState({});
   const [ref, setRef] = useState(getReferral());
@@ -56,26 +47,12 @@ export function Catalogue({ products, taxonomy, settings }) {
   useEffect(() => subscribeReferral(() => setRef(getReferral())), []);
 
   const allProducts = useMemo(() => products || [], [products]);
-  const occasions = useMemo(() => {
-    const map = new Map();
-    allProducts.forEach((p) =>
-      String(p.occasion || "")
-        .split(",")
-        .forEach((t) => {
-          t = t.trim();
-          if (t) map.set(t.toLowerCase(), t);
-        })
-    );
-    return [...map.values()].sort((a, b) => a.localeCompare(b));
-  }, [allProducts]);
 
   const isFilteredView = () =>
     activeCategory !== "all" ||
     activeSubcategory !== "all" ||
     activeProductType !== "all" ||
-    String(searchQuery || "").trim() !== "" ||
-    activeOccasion !== "all" ||
-    priceRange !== "any";
+    String(searchQuery || "").trim() !== "";
 
   const matchesFilters = useCallback(
     (p) => {
@@ -89,17 +66,6 @@ export function Catalogue({ products, taxonomy, settings }) {
       if (activeProductType !== "all") {
         if (taxonomyProductTypeForProduct(p, taxonomy).toLowerCase() !== activeProductType) return false;
       }
-      if (activeOccasion !== "all") {
-        const tags = String(p.occasion || "").toLowerCase().split(",").map((t) => t.trim());
-        if (!tags.includes(activeOccasion)) return false;
-      }
-      if (priceRange !== "any") {
-        const n = priceNumber(p);
-        if (n == null) return false;
-        if (priceRange === "under-20000" && !(n < 20000)) return false;
-        if (priceRange === "20000-50000" && !(n >= 20000 && n <= 50000)) return false;
-        if (priceRange === "above-50000" && !(n > 50000)) return false;
-      }
       const q = String(searchQuery || "").toLowerCase();
       if (q) {
         const haystack = [
@@ -111,6 +77,7 @@ export function Catalogue({ products, taxonomy, settings }) {
           taxonomyCategoryForProduct(p, taxonomy)?.name,
           taxonomySubcategoryForProduct(p, taxonomy),
           taxonomyProductTypeForProduct(p, taxonomy),
+          p.occasion,
           p.material,
           p.size,
           p.price,
@@ -121,7 +88,7 @@ export function Catalogue({ products, taxonomy, settings }) {
       }
       return true;
     },
-    [activeCategory, activeSubcategory, activeProductType, activeOccasion, priceRange, searchQuery, taxonomy]
+    [activeCategory, activeSubcategory, activeProductType, searchQuery, taxonomy]
   );
 
   const filtered = useMemo(() => {
@@ -156,15 +123,7 @@ export function Catalogue({ products, taxonomy, settings }) {
     setActiveSubcategory("all");
     setActiveProductType("all");
     setSearchQuery("");
-    setActiveOccasion("all");
-    setPriceRange("any");
   }, []);
-
-  const setCategory = (key) => {
-    setActiveCategory(String(key || "all").toLowerCase());
-    setActiveSubcategory("all");
-    setActiveProductType("all");
-  };
 
   useEffect(() => {
     const onClear = () => clearFilters();
@@ -503,34 +462,6 @@ export function Catalogue({ products, taxonomy, settings }) {
 
   const { sections, count } = renderGrid();
 
-  const categoryPills = () => {
-    const counts = {};
-    allProducts.forEach((product) => {
-      const category = taxonomyCategoryForProduct(product, taxonomy);
-      if (category) counts[category.name.toLowerCase()] = (counts[category.name.toLowerCase()] || 0) + 1;
-    });
-    const pillLabel = (c) => {
-      const key = c === "All" ? null : c.toLowerCase();
-      return key && counts[key] ? `${c} (${counts[key]})` : c;
-    };
-    return ["All", ...categories.map((c) => c.name)].map((c) => {
-      const key = c === "All" ? "all" : c.toLowerCase();
-      return (
-        <button
-          key={key}
-          type="button"
-          className={`pill${activeCategory === key ? " active" : ""}`}
-          data-category={key}
-          onClick={() => setCategory(key)}
-        >
-          {pillLabel(c)}
-        </button>
-      );
-    });
-  };
-
-  const hasOccasions = occasions.length > 0;
-
   return (
     <>
       <Lightbox />
@@ -548,7 +479,7 @@ export function Catalogue({ products, taxonomy, settings }) {
           <input
             type="search"
             id="catalogue-search"
-            placeholder="Search products by name or category…"
+            placeholder="Search by name, category, occasion or keyword…"
             aria-label="Search products"
             defaultValue={searchQuery}
             onChange={(e) => {
@@ -580,73 +511,6 @@ export function Catalogue({ products, taxonomy, settings }) {
             <option value="price-asc">Price: Low to High</option>
             <option value="price-desc">Price: High to Low</option>
             <option value="name-asc">Name: A to Z</option>
-          </select>
-          <select
-            id="catalogue-price"
-            className="catalogue-sort"
-            aria-label="Filter by price"
-            value={priceRange}
-            onChange={(e) => setPriceRange(e.target.value || "any")}
-          >
-            {PRICE_RANGES.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <select
-            id="catalogue-filter"
-            className="catalogue-sort"
-            aria-label="Filter by category"
-            value={activeCategory}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            {[["all", "All categories"], ...categories.map((c) => [c.name.toLowerCase(), c.name])].map(
-              ([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              )
-            )}
-          </select>
-        </div>
-        <div className="catalogue-filters" id="catalogue-filters" role="group" aria-label="Filter by category">
-          {categories.length ? categoryPills() : null}
-        </div>
-        <div
-          className="catalogue-filters occasion-filters"
-          id="occasion-filters"
-          role="group"
-          aria-label="Filter by occasion"
-          hidden={!hasOccasions}
-        >
-          {hasOccasions
-            ? [["all", "All"], ...occasions.map((o) => [o.toLowerCase(), o])].map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={`pill${activeOccasion === key ? " active" : ""}`}
-                  data-occasion={key}
-                  onClick={() => setActiveOccasion(String(key || "all").toLowerCase())}
-                >
-                  {label}
-                </button>
-              ))
-            : null}
-        </div>
-        <div className={`catalogue-selects occasion-select-row${hasOccasions ? "" : " hidden"}`} id="occasion-select-row">
-          <select
-            id="occasion-filter"
-            className="catalogue-sort"
-            aria-label="Filter by occasion"
-            value={activeOccasion}
-            onChange={(e) => setActiveOccasion(String(e.target.value || "all").toLowerCase())}
-          >
-            {[["all", "All occasions"], ...occasions.map((o) => [o.toLowerCase(), o])].map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
           </select>
         </div>
         <p className="catalogue-count" id="catalogue-count" aria-live="polite">

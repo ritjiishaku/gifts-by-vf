@@ -14,6 +14,7 @@ import {
   formatNaira,
   priceNumber,
   slugify,
+  isFeatured,
 } from "@/lib/format";
 import { TAXONOMY } from "@/lib/taxonomy";
 import { taxonomyCategoryForProduct, taxonomyProductTypeForProduct } from "@/lib/taxonomy";
@@ -95,7 +96,7 @@ export default async function ProductPage({ params }) {
   const meta = [
     ["Material", product.material],
     ["Size", product.size],
-    ["Turnaround", product.turnaround],
+    ["Processing time", product.turnaround],
     ["Delivery", product.delivery_note || product.delivery_notes],
     ["Payment", product.payment_note || product.payment_terms],
   ].filter(([, v]) => v != null && String(v).trim() !== "");
@@ -106,7 +107,12 @@ export default async function ProductPage({ params }) {
       const pc = taxonomyCategoryForProduct(p, TAXONOMY)?.name;
       return category ? pc === category : true;
     })
-    .slice(0, 3);
+    .slice()
+    .sort(
+      (a, b) =>
+        Number(isFeatured(b)) - Number(isFeatured(a)) ||
+        (parseInt(a.display_order, 10) || 999) - (parseInt(b.display_order, 10) || 999)
+    );
 
   const typeVisible =
     productType && productType.trim().toLowerCase() !== String(product.name).trim().toLowerCase();
@@ -197,13 +203,22 @@ export default async function ProductPage({ params }) {
           {related.length ? (
             <div className="product-related">
               <div className="catalogue-header fade-in">
-                <p className="section-label">Explore more</p>
-                <h2 className="section-title">You may also like</h2>
+                <p className="section-label">{category ? `More in ${category}` : "Explore more"}</p>
+                <h2 className="section-title">{category ? `All ${category} gifts` : "You may also like"}</h2>
+                <p className="section-desc">
+                  {related.length} {related.length === 1 ? "piece" : "pieces"} waiting to be discovered in
+                  {category ? ` ${category}` : " this collection"}.
+                </p>
               </div>
               <div className="products-grid">
                 {related.map((p) => (
                   <ProductCard key={p.id} p={p} pid={p.id} settings={settings} taxonomy={TAXONOMY} ref={null} />
                 ))}
+              </div>
+              <div className="product-catalogue-link">
+                <Link href="/#products" className="product-order-btn">
+                  <span>Browse the full catalogue</span>
+                </Link>
               </div>
             </div>
           ) : null}

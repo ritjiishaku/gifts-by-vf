@@ -217,3 +217,58 @@ export async function deleteRepAction(formData) {
     return internalError("Could not delete the rep.");
   }
 }
+
+export async function saveTestimonialAction(prevState, formData) {
+  if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
+  const raw = {
+    id: (formData.get("id") || "").toString().trim(),
+    name: (formData.get("name") || "").toString().trim(),
+    quote: (formData.get("quote") || "").toString().trim(),
+    source: (formData.get("source") || "").toString().trim(),
+    rating: (formData.get("rating") || "").toString().trim(),
+    display_order: (formData.get("display_order") || "").toString().trim(),
+    is_visible: toBool(formData, "is_visible"),
+  };
+
+  if (!raw.name) return internalError("Name is required.");
+  if (!raw.quote) return internalError("Testimonial message is required.");
+
+  const testimonial = {
+    id: Number(raw.id) || undefined,
+    name: raw.name,
+    quote: raw.quote,
+    source: raw.source || null,
+    rating: raw.rating ? Number(raw.rating) : null,
+    display_order: raw.display_order ? Number(raw.display_order) : 999,
+    is_visible: raw.is_visible,
+  };
+
+  try {
+    const { error } = await supabase()
+      .from("testimonials")
+      .upsert(testimonial, { onConflict: "id" });
+    if (error) throw error;
+    revalidatePath("/admin");
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (err) {
+    console.error("[admin] saveTestimonial:", err.message);
+    return internalError("Could not save the testimonial. " + err.message);
+  }
+}
+
+export async function deleteTestimonialAction(formData) {
+  if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
+  const id = Number(formData.get("id")) || null;
+  if (!id) return internalError("Missing testimonial id.");
+  try {
+    const { error } = await supabase().from("testimonials").delete().eq("id", id);
+    if (error) throw error;
+    revalidatePath("/admin");
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (err) {
+    console.error("[admin] deleteTestimonial:", err.message);
+    return internalError("Could not delete the testimonial.");
+  }
+}

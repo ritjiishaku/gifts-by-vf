@@ -58,7 +58,7 @@ export function ProductCard({ p, pid, settings, taxonomy, ref }) {
   const meta = [
     ["Material", p.material],
     ["Size", p.size],
-    ["Turnaround", p.turnaround],
+    ["Processing time", p.turnaround],
     ["Delivery", p.delivery_note || p.delivery_notes],
     ["Payment", p.payment_note || p.payment_terms],
   ].filter(([, v]) => v != null && String(v).trim() !== "");
