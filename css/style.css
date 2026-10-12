@@ -2783,6 +2783,22 @@ body.lightbox-open { overflow: hidden; }
     resize: vertical;
 }
 .rep-invite-msg:focus { outline: 2px solid var(--gold); border-color: transparent; }
+.rep-invite-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--text);
+    font: inherit;
+    font-size: 0.9rem;
+}
+.rep-invite-input:focus { outline: 2px solid var(--gold); border-color: transparent; }
+.rep-invite-hint {
+    color: var(--text-light);
+    font-size: 0.68rem;
+    line-height: 1.45;
+}
 .rep-invite-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .rep-invite-actions .admin-btn { text-decoration: none; }
 

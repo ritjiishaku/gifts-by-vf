@@ -30,13 +30,26 @@ function copyText(text) {
   });
 }
 
+// Turn a typed number into a wa.me target (digits only). Local Nigerian numbers
+// starting with 0 get the 234 country code so the link actually resolves.
+function normalizePhone(input) {
+  let d = String(input || "").replace(/\D/g, "");
+  if (!d) return "";
+  if (d.startsWith("0")) d = "234" + d.slice(1);
+  return d;
+}
+
 export function AdminRepForm({ rep, onClose }) {
   const [state, formAction] = useActionState(saveRepAction, {});
   const [portalUrl, setPortalUrl] = useState(FALLBACK_PORTAL_URL);
   const [copied, setCopied] = useState("");
+  const [phone, setPhone] = useState(rep.whatsapp || "");
   const isNew = !rep.id;
+  const inviteMode = Boolean(rep.inviteMode);
 
   const addedRep = state?.ok && isNew && state.rep ? state.rep : null;
+  const inviteRep =
+    addedRep || (inviteMode ? { rep_id: rep.rep_id, name: rep.name } : null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -44,11 +57,11 @@ export function AdminRepForm({ rep, onClose }) {
     }
   }, []);
 
-  // Only close automatically for edits / non-invite cases. New reps get the
-  // invite panel instead, so the admin can copy/share the setup details.
+  // Only close automatically for edits / non-invite cases. New reps (and the
+  // explicit invite flow) get the invite panel so details can be copied/shared.
   useEffect(() => {
-    if (state?.ok && !(isNew && state.rep)) onClose();
-  }, [state, isNew, onClose]);
+    if (state?.ok && !(isNew && state.rep) && !inviteMode) onClose();
+  }, [state, isNew, inviteMode, onClose]);
 
   const handleCopy = (text, key) => {
     copyText(text).then(() => {
@@ -57,15 +70,16 @@ export function AdminRepForm({ rep, onClose }) {
     });
   };
 
-  if (addedRep) {
-    const code = addedRep.rep_id || "";
-    const name = (addedRep.name || "").trim();
+  if (inviteRep) {
+    const code = inviteRep.rep_id || "";
+    const name = (inviteRep.name || "").trim();
     const message =
       `Hi ${name || "there"}, welcome to Gifts by VF sales team!\n` +
       `Your rep code: ${code}\n` +
       `1) Open ${portalUrl} 2) Enter your rep code 3) Create your own PIN (4+ characters) when prompted\n` +
       `Then you can share gift links and track your commission.`;
-    const waHref = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    const waNumber = normalizePhone(phone);
+    const waHref = `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
 
     return (
       <div
@@ -76,7 +90,7 @@ export function AdminRepForm({ rep, onClose }) {
       >
         <div className="admin-modal-panel admin-modal-panel-narrow">
           <div className="admin-modal-head">
-            <h2>Rep added</h2>
+            <h2>{addedRep ? "Rep added" : "Invite rep"}</h2>
             <button
               type="button"
               className="admin-btn admin-btn-ghost"
@@ -111,6 +125,24 @@ export function AdminRepForm({ rep, onClose }) {
                 value={message}
                 onFocus={(e) => e.target.select()}
               />
+            </div>
+
+            <div className="rep-invite-row">
+              <span className="rep-invite-label">
+                WhatsApp number (optional)
+              </span>
+              <input
+                className="rep-invite-input"
+                type="tel"
+                inputMode="tel"
+                placeholder="e.g. 0803 123 4567 or 234803…"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+              <span className="rep-invite-hint">
+                Add the rep&apos;s number to open their chat directly, or leave it
+                blank to pick a contact in WhatsApp.
+              </span>
             </div>
 
             <div className="rep-invite-actions">

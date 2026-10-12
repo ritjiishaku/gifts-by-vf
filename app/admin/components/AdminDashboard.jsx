@@ -33,6 +33,7 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
   const [editingProduct, setEditingProduct] = useState(null);
   const [addingProduct, setAddingProduct] = useState(false);
   const [editingRep, setEditingRep] = useState(null);
+  const [invitingRep, setInvitingRep] = useState(null);
   const [editingTestimonial, setEditingTestimonial] = useState(null);
   const [addingTestimonial, setAddingTestimonial] = useState(false);
 
@@ -212,6 +213,15 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
                   >
                     Edit
                   </button>
+                  {!r.has_pin ? (
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-ghost"
+                      onClick={() => setInvitingRep(r)}
+                    >
+                      Invite
+                    </button>
+                  ) : null}
                   <form action={deleteRepAction} className="inline">
                     <input type="hidden" name="id" value={r.id} />
                     <button
@@ -382,6 +392,13 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
       ) : null}
 
       {editingRep ? <AdminRepForm rep={editingRep} onClose={() => setEditingRep(null)} /> : null}
+
+      {invitingRep ? (
+        <AdminRepForm
+          rep={{ rep_id: invitingRep.rep_id, name: invitingRep.name, inviteMode: true }}
+          onClose={() => setInvitingRep(null)}
+        />
+      ) : null}
 
       {editingTestimonial || addingTestimonial ? (
         <AdminTestimonialsForm
