@@ -1530,6 +1530,13 @@ body {
     flex: 1 1 auto;
 }
 
+/* Auth screens (rep login / PIN setup + admin login) render a full-bleed dark
+   card with their own brand header, so hide the mini site header while an
+   auth-shell is on screen. It reappears on the rep dashboard. */
+.page-shell:has(.auth-shell) .rep-header {
+    display: none;
+}
+
 /* Full-bleed 100dvh auth wrapper */
 .auth-shell {
     position: relative;
@@ -1580,10 +1587,10 @@ body {
     background: radial-gradient(circle, rgba(201, 169, 110, 0.04) 0%, transparent 70%);
 }
 
-/* When auth-shell is inside rep-page-shell (which has a sticky header ~60px), 
-   account for the header height */
+/* Auth-shell is a full-bleed 100dvh screen. The mini header is hidden above
+   (see .page-shell:has(.auth-shell) rule), so no header offset is needed. */
 .rep-page-shell > .auth-shell {
-    min-height: calc(100dvh - 60px);
+    min-height: 100dvh;
 }
 
 .auth-card {
