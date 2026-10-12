@@ -77,7 +77,8 @@ export function RepPortal({ products, commissionRule }) {
   }, [input, step]);
 
   const login = async (e) => {
-    e.preventDefault();
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+    if (e && typeof e.stopPropagation === "function") e.stopPropagation();
     setError("");
     const id = input.trim();
     const pinValue = pin.trim();
@@ -120,7 +121,8 @@ export function RepPortal({ products, commissionRule }) {
   };
 
   const setupPin = async (e) => {
-    e.preventDefault();
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+    if (e && typeof e.stopPropagation === "function") e.stopPropagation();
     setError("");
     const code = (rep?.rep_id || input).trim();
     const p1 = newPin.trim();
@@ -304,7 +306,7 @@ export function RepPortal({ products, commissionRule }) {
           <h1 className="auth-title">Rep sign in</h1>
           <p className="auth-hint">Enter your rep code and PIN to access your sales portal.</p>
 
-          <form id="rep-form" className="auth-form" onSubmit={login}>
+          <form id="rep-form" className="auth-form" noValidate onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); login(e); }}>
             <label className="auth-field">
               <span className="auth-label">Rep code</span>
               <input
@@ -393,7 +395,7 @@ export function RepPortal({ products, commissionRule }) {
             4 characters) to protect your sales portal and track your payouts.
           </p>
 
-          <form id="rep-setup-form" className="auth-form" onSubmit={setupPin}>
+          <form id="rep-setup-form" className="auth-form" noValidate onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); setupPin(e); }}>
             <label className="auth-field">
               <span className="auth-label">New PIN</span>
               <span className="admin-pass-field">
@@ -452,7 +454,16 @@ export function RepPortal({ products, commissionRule }) {
               </p>
             ) : null}
 
-            <button type="submit" className="auth-submit" disabled={submitting}>
+            <button
+              type="button"
+              className="auth-submit"
+              disabled={submitting}
+              onClick={async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                await setupPin(e);
+              }}
+            >
               {submitting ? "Saving PIN…" : "Save PIN & Sign In"}
             </button>
 

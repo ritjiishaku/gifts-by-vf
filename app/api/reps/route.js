@@ -86,7 +86,12 @@ export async function POST(request) {
       .eq("id", rep.id);
 
     if (updateError) {
-      console.error("[api/reps] setup-pin error:", updateError.message);
+      console.error("[api/reps] setup-pin error:", {
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint,
+        code: updateError.code,
+      });
       return NextResponse.json(
         { error: "Could not save your PIN right now. Please try again." },
         { status: 500 }
