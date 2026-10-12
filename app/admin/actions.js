@@ -10,7 +10,6 @@ import {
   verifySessionCookieValue,
 } from "@/lib/auth";
 import { slugify } from "@/lib/format";
-import { hashPin } from "@/lib/rep-pin";
 
 function internalError(message) {
   return { ok: false, error: message };
@@ -215,9 +214,8 @@ export async function saveRepAction(prevState, formData) {
   const repDbId = Number(formData.get("id")) || null;
   const repId = (formData.get("rep_id") || "").toString().trim();
   if (!repId) return internalError("Rep code is required.");
-  const pin = (formData.get("pin") || "").toString().trim();
-  if (pin && pin.length < 4) return internalError("PIN must be at least 4 characters.");
-  if (!repDbId && !pin) return internalError("Set a login PIN for the new rep.");
+  const resetPin = toBool(formData, "reset_pin");
+
   const rep = {
     rep_id: repId,
     name: (formData.get("name") || "").toString().trim() || null,
@@ -226,7 +224,9 @@ export async function saveRepAction(prevState, formData) {
       : null,
     is_active: toBool(formData, "is_active"),
   };
-  if (pin) rep.pin_hash = hashPin(pin);
+  if (resetPin) {
+    rep.pin_hash = null;
+  }
   try {
     let error;
     if (repDbId) {

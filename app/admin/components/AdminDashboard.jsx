@@ -198,7 +198,10 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
                   <h4>{r.name || r.rep_id}</h4>
                   <p>
                     Code: <strong>{r.rep_id}</strong> · {r.commission_rate ?? 0}% ·{" "}
-                    {r.is_active ? "active" : "inactive"}
+                    {r.is_active ? "active" : "inactive"} ·{" "}
+                    <span style={{ color: r.has_pin ? "#2e7d32" : "#b8860b", fontWeight: "500" }}>
+                      {r.has_pin ? "PIN set" : "PIN pending"}
+                    </span>
                   </p>
                 </div>
                 <div className="admin-actions">

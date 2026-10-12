@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Icon } from "@/components/icons";
 import {
   slugify,
   priceNumber,
@@ -19,6 +20,12 @@ export function RepPortal({ products, commissionRule }) {
   const [rep, setRep] = useState(null);
   const [input, setInput] = useState("");
   const [pin, setPin] = useState("");
+  const [showPin, setShowPin] = useState(false);
+  const [newPin, setNewPin] = useState("");
+  const [showNewPin, setShowNewPin] = useState(false);
+  const [confirmPin, setConfirmPin] = useState("");
+  const [showConfirmPin, setShowConfirmPin] = useState(false);
+  const [pinNotice, setPinNotice] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [payouts, setPayouts] = useState(null);
@@ -36,8 +43,8 @@ export function RepPortal({ products, commissionRule }) {
     setError("");
     const id = input.trim();
     const pinValue = pin.trim();
-    if (!id || !pinValue) {
-      setError("Enter your rep code and PIN.");
+    if (!id) {
+      setError("Enter your rep code.");
       return;
     }
     setSubmitting(true);
@@ -48,16 +55,19 @@ export function RepPortal({ products, commissionRule }) {
         body: JSON.stringify({ rep: id, pin: pinValue }),
         cache: "no-store",
       });
-      if (res.status === 401) {
-        setError("Invalid rep code or PIN.");
-        return;
-      }
-      if (res.status === 429) {
-        setError("Too many attempts. Please try again in a minute.");
-        return;
-      }
-      if (!res.ok) throw new Error("login failed");
       const json = await res.json();
+      if (!res.ok) {
+        setError(json.error || "Could not sign you in right now. Please try again.");
+        return;
+      }
+      if (json.needsPinSetup) {
+        setRep({ rep_id: json.repCode, name: json.repName });
+        setStep("setup-pin");
+        setNewPin("");
+        setConfirmPin("");
+        setError("");
+        return;
+      }
       const found = json.rep || {};
       setRep({ rep_id: found.rep_id, name: found.name, rate: found.commission_rate });
       setPayoutsError("");
@@ -66,6 +76,54 @@ export function RepPortal({ products, commissionRule }) {
       setStep("dashboard");
     } catch (err) {
       setError("Could not sign you in right now. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const setupPin = async (e) => {
+    e.preventDefault();
+    setError("");
+    const code = (rep?.rep_id || input).trim();
+    const p1 = newPin.trim();
+    const p2 = confirmPin.trim();
+
+    if (!p1 || p1.length < 4) {
+      setError("PIN must be at least 4 digits or characters.");
+      return;
+    }
+    if (p1 !== p2) {
+      setError("PINs do not match. Please re-enter.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/reps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "setup-pin",
+          rep: code,
+          newPin: p1,
+          confirmPin: p2,
+        }),
+        cache: "no-store",
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error || "Could not set your PIN right now.");
+        return;
+      }
+      const found = json.rep || {};
+      setRep({ rep_id: found.rep_id, name: found.name, rate: found.commission_rate });
+      setPayoutsError("");
+      setPayouts(Array.isArray(json.payouts) ? json.payouts : []);
+      sessionStorage.setItem(SESSION_KEY, found.rep_id);
+      setPinNotice("Your PIN has been created successfully! Remember it for future sign-ins.");
+      setStep("dashboard");
+    } catch (err) {
+      setError("Could not set your PIN right now. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -197,11 +255,9 @@ export function RepPortal({ products, commissionRule }) {
       <section id="rep-login" className="rep-section rep-panel">
         <h2>Sales Rep Login</h2>
         <p className="rep-hint">
-          Enter the rep code and PIN the owner gave you (for example, code{" "}
-          <strong>kofi</strong>). You&apos;ll get your personalised share links and
-          commission status.
+          Enter your rep code and PIN to access your sales portal. If this is your first time logging in, enter your rep code to set up your PIN.
         </p>
-        <form id="rep-form" className="rep-form" onSubmit={login}>
+        <form id="rep-form" className="rep-form rep-form-stacked" onSubmit={login}>
           <input
             type="text"
             id="rep-input"
@@ -210,19 +266,119 @@ export function RepPortal({ products, commissionRule }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
-          <input
-            type="password"
-            id="rep-pin"
-            placeholder="Enter your PIN"
-            autoComplete="current-password"
-            value={pin}
-            onChange={(e) => setPin(e.target.value)}
-          />
+          <div className="admin-pass-field">
+            <input
+              type={showPin ? "text" : "password"}
+              id="rep-pin"
+              placeholder="Enter your PIN"
+              autoComplete="current-password"
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+            />
+            <button
+              type="button"
+              className="admin-pass-toggle"
+              aria-label={showPin ? "Hide PIN" : "Show PIN"}
+              aria-pressed={showPin}
+              title={showPin ? "Hide PIN" : "Show PIN"}
+              onClick={() => setShowPin((v) => !v)}
+            >
+              <Icon name={showPin ? "eye-off" : "eye"} />
+            </button>
+          </div>
           <button type="submit" className="rep-btn" disabled={submitting}>
             {submitting ? "Checking…" : "Continue"}
           </button>
         </form>
         <p id="rep-error" className={`rep-error${error ? "" : " hidden"}`}>{error}</p>
+      </section>
+    );
+  }
+
+  if (step === "setup-pin") {
+    const displayName = rep?.name || rep?.rep_id || input;
+    return (
+      <section id="rep-setup-pin" className="rep-section rep-panel">
+        <p
+          className="section-label"
+          style={{
+            color: "var(--gold)",
+            marginBottom: "8px",
+            fontWeight: "600",
+            fontSize: "0.8rem",
+            textTransform: "uppercase",
+            letterSpacing: "1.5px",
+          }}
+        >
+          First-time setup
+        </p>
+        <h2>Set up your login PIN</h2>
+        <p className="rep-hint">
+          Welcome, <strong>{displayName}</strong>! Please choose a secure PIN (at least 4 characters) to protect your sales portal and track your payouts.
+        </p>
+        <form id="rep-setup-form" className="rep-form rep-form-stacked" onSubmit={setupPin}>
+          <div className="admin-pass-field">
+            <input
+              type={showNewPin ? "text" : "password"}
+              id="rep-new-pin"
+              placeholder="Create a new PIN (4+ characters)"
+              autoComplete="new-password"
+              value={newPin}
+              onChange={(e) => setNewPin(e.target.value)}
+              required
+              minLength={4}
+            />
+            <button
+              type="button"
+              className="admin-pass-toggle"
+              aria-label={showNewPin ? "Hide PIN" : "Show PIN"}
+              aria-pressed={showNewPin}
+              title={showNewPin ? "Hide PIN" : "Show PIN"}
+              onClick={() => setShowNewPin((v) => !v)}
+            >
+              <Icon name={showNewPin ? "eye-off" : "eye"} />
+            </button>
+          </div>
+          <div className="admin-pass-field">
+            <input
+              type={showConfirmPin ? "text" : "password"}
+              id="rep-confirm-pin"
+              placeholder="Confirm your new PIN"
+              autoComplete="new-password"
+              value={confirmPin}
+              onChange={(e) => setConfirmPin(e.target.value)}
+              required
+              minLength={4}
+            />
+            <button
+              type="button"
+              className="admin-pass-toggle"
+              aria-label={showConfirmPin ? "Hide PIN" : "Show PIN"}
+              aria-pressed={showConfirmPin}
+              title={showConfirmPin ? "Hide PIN" : "Show PIN"}
+              onClick={() => setShowConfirmPin((v) => !v)}
+            >
+              <Icon name={showConfirmPin ? "eye-off" : "eye"} />
+            </button>
+          </div>
+          <button type="submit" className="rep-btn" disabled={submitting}>
+            {submitting ? "Saving PIN…" : "Save PIN & Sign In"}
+          </button>
+          <button
+            type="button"
+            className="rep-btn rep-btn-ghost"
+            style={{ marginTop: "6px" }}
+            onClick={() => {
+              setStep("login");
+              setNewPin("");
+              setConfirmPin("");
+              setError("");
+            }}
+          >
+            Cancel
+          </button>
+        </form>
+        <p id="rep-setup-error" className={`rep-error${error ? "" : " hidden"}`}>{error}</p>
       </section>
     );
   }
@@ -259,6 +415,42 @@ export function RepPortal({ products, commissionRule }) {
 
   return (
     <section id="rep-dashboard" className="rep-dashboard">
+      {pinNotice ? (
+        <div
+          className="rep-notice"
+          style={{
+            background: "rgba(201,169,110,0.15)",
+            border: "1px solid var(--gold)",
+            padding: "12px 18px",
+            borderRadius: "10px",
+            marginBottom: "18px",
+            color: "var(--dark)",
+            fontWeight: "500",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span>{pinNotice}</span>
+          <button
+            type="button"
+            onClick={() => setPinNotice("")}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "1.2rem",
+              lineHeight: "1",
+              padding: "0 6px",
+              color: "inherit",
+            }}
+            aria-label="Dismiss message"
+          >
+            ×
+          </button>
+        </div>
+      ) : null}
+
       <div className="rep-dashboard-intro">
         <div>
           <p className="section-label">Sales portal</p>

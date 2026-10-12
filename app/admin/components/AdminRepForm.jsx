@@ -56,15 +56,6 @@ export function AdminRepForm({ rep, onClose }) {
               placeholder="e.g. 10 for 10%"
             />
           </label>
-          <label className="admin-field admin-field-wide">
-            Login PIN ({isNew ? "required" : "leave blank to keep current"})
-            <input
-              name="pin"
-              type="password"
-              autoComplete="new-password"
-              placeholder={isNew ? "e.g. 4+ characters" : "Set a new PIN…"}
-            />
-          </label>
         </div>
 
         <div className="admin-checks">
@@ -77,6 +68,28 @@ export function AdminRepForm({ rep, onClose }) {
             />
             Active (can log in and share links)
           </label>
+          {!isNew && rep.has_pin ? (
+            <label className="admin-check">
+              <input type="checkbox" name="reset_pin" value="true" />
+              Reset PIN (allows rep to set a new PIN on their next login)
+            </label>
+          ) : null}
+        </div>
+
+        <div style={{ marginTop: "14px", padding: "12px 14px", background: "rgba(0,0,0,0.03)", borderRadius: "6px", fontSize: "0.82rem", color: "var(--text-light)", lineHeight: "1.5" }}>
+          {isNew ? (
+            <p style={{ margin: 0 }}>
+              💡 <strong>Self-service PIN:</strong> The rep will set up their own PIN the first time they log in to the sales portal. Admins do not set rep PINs.
+            </p>
+          ) : rep.has_pin ? (
+            <p style={{ margin: 0 }}>
+              🔒 <strong>PIN Status: Set by rep.</strong> Rep PINs are managed by reps themselves. Check <em>Reset PIN</em> above if this rep forgot their PIN and needs to create a new one.
+            </p>
+          ) : (
+            <p style={{ margin: 0 }}>
+              ⏳ <strong>PIN Status: Not set yet.</strong> The rep will be prompted to create their PIN upon their first visit with rep code <strong>{rep.rep_id}</strong>.
+            </p>
+          )}
         </div>
 
         <div className="admin-form-actions">
