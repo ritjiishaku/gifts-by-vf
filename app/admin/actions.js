@@ -80,18 +80,49 @@ export async function saveProductAction(prevState, formData) {
 
   if (!raw.name) return internalError("Product name is required.");
   const id = Number(raw.id) || null;
-  const product = {
-    ...raw,
-    id: undefined,
+  const payload = {
+    name: raw.name,
     slug: raw.slug || slugify(raw.name),
+    description: raw.description || null,
+    image_url: raw.image_url || null,
+    video_url: raw.video_url || null,
+    price: raw.price || null,
+    category: raw.category || null,
+    subcategory: raw.subcategory || null,
+    product_type: raw.product_type || null,
     display_order: raw.display_order ? Number(raw.display_order) : 999,
+    is_visible: raw.is_visible,
+    in_stock: raw.in_stock,
+    stock_label: raw.stock_label || null,
+    occasion: raw.occasion || null,
+    featured: raw.featured,
+    material: raw.material || null,
+    size: raw.size || null,
+    turnaround: raw.turnaround || null,
+    delivery_note: raw.delivery_note || null,
+    payment_note: raw.payment_note || null,
+    sales_caption: raw.sales_caption || null,
+    icon: raw.icon || null,
   };
 
   try {
-    const { error } = await supabase()
-      .from("products")
-      .upsert(product, { onConflict: "slug" });
-    if (error) throw error;
+    let error;
+    if (id) {
+      ({ error } = await supabase()
+        .from("products")
+        .update(payload)
+        .eq("id", id));
+    } else {
+      ({ error } = await supabase()
+        .from("products")
+        .insert(payload));
+    }
+    if (error) {
+      if (error.code === "23505") {
+        return internalError("A product with this slug already exists. Please choose a different slug or name.");
+      }
+      throw error;
+    }
     revalidatePath("/admin");
     revalidatePath("/", "layout");
     return { ok: true };
@@ -197,10 +228,23 @@ export async function saveRepAction(prevState, formData) {
   };
   if (pin) rep.pin_hash = hashPin(pin);
   try {
-    const { error } = await supabase()
-      .from("sales_reps")
-      .upsert(rep, { onConflict: "rep_id" });
-    if (error) throw error;
+    let error;
+    if (repDbId) {
+      ({ error } = await supabase()
+        .from("sales_reps")
+        .update(rep)
+        .eq("id", repDbId));
+    } else {
+      ({ error } = await supabase()
+        .from("sales_reps")
+        .insert(rep));
+    }
+    if (error) {
+      if (error.code === "23505") {
+        return internalError("A sales rep with this rep code already exists.");
+      }
+      throw error;
+    }
     revalidatePath("/admin");
     return { ok: true };
   } catch (err) {

@@ -13,6 +13,7 @@ import {
   isSoldOut,
   formatNaira,
   priceNumber,
+  filterAndSort,
   slugify,
   isFeatured,
   serializeJsonLd,
@@ -114,7 +115,7 @@ export default async function ProductPage({ params }) {
     ["Payment", product.payment_note || product.payment_terms],
   ].filter(([, v]) => v != null && String(v).trim() !== "");
 
-  const related = allProducts
+  const related = filterAndSort(allProducts)
     .filter((p) => String(p.id) !== String(product.id))
     .filter((p) => {
       const pc = taxonomyCategoryForProduct(p, TAXONOMY)?.name;
