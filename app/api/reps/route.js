@@ -80,10 +80,12 @@ export async function POST(request) {
     }
 
     const hashed = hashPin(newPin);
+    const repIdField = rep.id !== undefined && rep.id !== null ? "id" : "rep_id";
+    const repIdValue = rep.id !== undefined && rep.id !== null ? rep.id : rep.rep_id;
     const { error: updateError } = await supabase()
       .from("sales_reps")
       .update({ pin_hash: hashed })
-      .eq("id", rep.id);
+      .eq(repIdField, repIdValue);
 
     if (updateError) {
       console.error("[api/reps] setup-pin error:", {
