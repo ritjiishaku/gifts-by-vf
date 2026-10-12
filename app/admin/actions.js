@@ -229,15 +229,21 @@ export async function saveRepAction(prevState, formData) {
   }
   try {
     let error;
+    let saved = null;
     if (repDbId) {
       ({ error } = await supabase()
         .from("sales_reps")
         .update(rep)
         .eq("id", repDbId));
+      if (!error) saved = { id: repDbId, rep_id: repId, name: rep.name };
     } else {
-      ({ error } = await supabase()
+      const { data, error: insertError } = await supabase()
         .from("sales_reps")
-        .insert(rep));
+        .insert(rep)
+        .select("id,rep_id,name")
+        .single();
+      error = insertError;
+      if (!error) saved = data;
     }
     if (error) {
       if (error.code === "23505") {
@@ -246,7 +252,8 @@ export async function saveRepAction(prevState, formData) {
       throw error;
     }
     revalidatePath("/admin");
-    return { ok: true };
+    // `rep` is returned so the form can show the invite/share panel for new reps.
+    return { ok: true, rep: saved };
   } catch (err) {
     console.error("[admin] saveRep:", err.message);
     return internalError("Could not save the rep.");

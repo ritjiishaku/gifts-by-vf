@@ -1,15 +1,154 @@
 "use client";
 
-import { useEffect, useActionState } from "react";
+import { useEffect, useState, useActionState } from "react";
 import { saveRepAction } from "../actions";
+
+const FALLBACK_PORTAL_URL = "https://giftsbyvf.vercel.app/reps";
+
+function copyText(text) {
+  return new Promise((resolve) => {
+    const fallback = () => {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch (e) {
+        /* clipboard unavailable — the admin can still select manually */
+      }
+      resolve();
+    };
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(resolve).catch(fallback);
+    } else {
+      fallback();
+    }
+  });
+}
 
 export function AdminRepForm({ rep, onClose }) {
   const [state, formAction] = useActionState(saveRepAction, {});
+  const [portalUrl, setPortalUrl] = useState(FALLBACK_PORTAL_URL);
+  const [copied, setCopied] = useState("");
   const isNew = !rep.id;
 
+  const addedRep = state?.ok && isNew && state.rep ? state.rep : null;
+
   useEffect(() => {
-    if (state?.ok) onClose();
-  }, [state, onClose]);
+    if (typeof window !== "undefined") {
+      setPortalUrl(`${window.location.origin}/reps`);
+    }
+  }, []);
+
+  // Only close automatically for edits / non-invite cases. New reps get the
+  // invite panel instead, so the admin can copy/share the setup details.
+  useEffect(() => {
+    if (state?.ok && !(isNew && state.rep)) onClose();
+  }, [state, isNew, onClose]);
+
+  const handleCopy = (text, key) => {
+    copyText(text).then(() => {
+      setCopied(key);
+      setTimeout(() => setCopied(""), 2000);
+    });
+  };
+
+  if (addedRep) {
+    const code = addedRep.rep_id || "";
+    const name = (addedRep.name || "").trim();
+    const message =
+      `Hi ${name || "there"}, welcome to Gifts by VF sales team!\n` +
+      `Your rep code: ${code}\n` +
+      `1) Open ${portalUrl} 2) Enter your rep code 3) Create your own PIN (4+ characters) when prompted\n` +
+      `Then you can share gift links and track your commission.`;
+    const waHref = `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+    return (
+      <div
+        className="admin-modal"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="admin-modal-panel admin-modal-panel-narrow">
+          <div className="admin-modal-head">
+            <h2>Rep added</h2>
+            <button
+              type="button"
+              className="admin-btn admin-btn-ghost"
+              onClick={onClose}
+            >
+              Close
+            </button>
+          </div>
+
+          <div className="rep-invite">
+            <p className="rep-invite-lead">
+              Share these details with <strong>{name || code}</strong> so they can
+              set up their PIN and start sharing.
+            </p>
+
+            <div className="rep-invite-row">
+              <span className="rep-invite-label">Rep code</span>
+              <code className="rep-invite-code">{code}</code>
+            </div>
+
+            <div className="rep-invite-row">
+              <span className="rep-invite-label">Portal link</span>
+              <code className="rep-invite-link">{portalUrl}</code>
+            </div>
+
+            <div className="rep-invite-row">
+              <span className="rep-invite-label">Message</span>
+              <textarea
+                className="rep-invite-msg"
+                readOnly
+                rows={6}
+                value={message}
+                onFocus={(e) => e.target.select()}
+              />
+            </div>
+
+            <div className="rep-invite-actions">
+              <button
+                type="button"
+                className="admin-btn"
+                onClick={() => handleCopy(message, "message")}
+              >
+                {copied === "message" ? "Copied!" : "Copy message"}
+              </button>
+              <button
+                type="button"
+                className="admin-btn admin-btn-ghost"
+                onClick={() => handleCopy(code, "code")}
+              >
+                {copied === "code" ? "Copied!" : "Copy code"}
+              </button>
+              <button
+                type="button"
+                className="admin-btn admin-btn-ghost"
+                onClick={() => handleCopy(portalUrl, "link")}
+              >
+                {copied === "link" ? "Copied!" : "Copy link"}
+              </button>
+              <a
+                className="admin-btn"
+                href={waHref}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Share on WhatsApp
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
