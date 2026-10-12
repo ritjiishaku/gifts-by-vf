@@ -80,12 +80,19 @@ export async function POST(request) {
     }
 
     const hashed = hashPin(newPin);
-    const repIdField = rep.id !== undefined && rep.id !== null ? "id" : "rep_id";
-    const repIdValue = rep.id !== undefined && rep.id !== null ? rep.id : rep.rep_id;
+    // Update by the natural unique key (rep_id, text). Using the `id` column
+    // here risks a bigint cast error (e.g. "invalid input syntax for type
+    // bigint: undefined") if the row's id is ever missing from the select.
+    if (!rep.rep_id) {
+      return NextResponse.json(
+        { error: "Could not save your PIN right now. Please try again." },
+        { status: 500 }
+      );
+    }
     const { error: updateError } = await supabase()
       .from("sales_reps")
       .update({ pin_hash: hashed })
-      .eq(repIdField, repIdValue);
+      .eq("rep_id", rep.rep_id);
 
     if (updateError) {
       console.error("[api/reps] setup-pin error:", {
