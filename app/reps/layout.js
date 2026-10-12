@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function RepsLayout({ children }) {
   return (
-    <>
+    <div className="page-shell">
       <header className="rep-header">
         <Link href="/" className="nav-logo" aria-label="Gifts by VF">
           <span className="brand-name">
@@ -19,6 +19,6 @@ export default function RepsLayout({ children }) {
         <span className="rep-tag">Sales Rep Tools</span>
       </header>
       <main className="rep-page-shell">{children}</main>
-    </>
+    </div>
   );
 }

@@ -9,11 +9,7 @@ export default async function AdminPage() {
   const authed = verifySessionCookieValue(cookieStore.get(SESSION_COOKIE)?.value);
 
   if (!authed) {
-    return (
-      <section className="admin-section">
-        <AdminLogin />
-      </section>
-    );
+    return <AdminLogin />;
   }
 
   const [settings, products, reps, testimonials, portfolio, whyUs, howTo, faqs] =
@@ -29,15 +25,29 @@ export default async function AdminPage() {
     ]);
 
   return (
-    <AdminDashboard
-      settings={settings}
-      products={products}
-      reps={reps}
-      testimonials={testimonials}
-      portfolio={portfolio}
-      whyUs={whyUs}
-      howTo={howTo}
-      faqs={faqs}
-    />
+    <>
+      <section className="page-hero admin-hero">
+        <div className="page-hero-copy">
+          <p className="section-label">Owner area</p>
+          <h1>Manage your gift catalogue</h1>
+          <p>Update products, reps and site content from one polished admin area.</p>
+        </div>
+        <div className="gift-chips" aria-label="Admin focus areas">
+          <span>Settings</span>
+          <span>Products</span>
+          <span>Reps</span>
+        </div>
+      </section>
+      <AdminDashboard
+        settings={settings}
+        products={products}
+        reps={reps}
+        testimonials={testimonials}
+        portfolio={portfolio}
+        whyUs={whyUs}
+        howTo={howTo}
+        faqs={faqs}
+      />
+    </>
   );
 }

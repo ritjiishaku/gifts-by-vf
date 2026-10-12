@@ -32,11 +32,49 @@ export function RepPortal({ products, commissionRule }) {
   const [payoutsError, setPayoutsError] = useState("");
   const [payoutShown, setPayoutShown] = useState(REP_PAYOUT_LIMIT);
   const [filter, setFilter] = useState({ query: "", category: "all", price: "any", occasion: "all", sort: "featured" });
+  const [pinStatus, setPinStatus] = useState("idle"); // idle | checking | no-pin | has-pin | not-found
 
   useEffect(() => {
     const saved = sessionStorage.getItem(SESSION_KEY);
     if (saved) setInput(saved);
   }, []);
+
+  // Look up whether the typed rep code has a PIN yet, so we only show the
+  // "Set up your PIN" link to first-time reps. Debounced + abortable so rapid
+  // typing can't produce stale results.
+  useEffect(() => {
+    if (step !== "login") {
+      setPinStatus("idle");
+      return;
+    }
+    const code = input.trim();
+    if (!code) {
+      setPinStatus("idle");
+      return;
+    }
+    const controller = new AbortController();
+    setPinStatus("checking");
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/reps?rep=${encodeURIComponent(code)}`, {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+        const json = await res.json();
+        if (!res.ok || !json.found) {
+          setPinStatus("not-found");
+        } else {
+          setPinStatus(json.hasPin ? "has-pin" : "no-pin");
+        }
+      } catch (err) {
+        if (err.name !== "AbortError") setPinStatus("idle");
+      }
+    }, 400);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [input, step]);
 
   const login = async (e) => {
     e.preventDefault();
@@ -252,134 +290,187 @@ export function RepPortal({ products, commissionRule }) {
 
   if (step === "login") {
     return (
-      <section id="rep-login" className="rep-section rep-panel">
-        <h2>Sales Rep Login</h2>
-        <p className="rep-hint">
-          Enter your rep code and PIN to access your sales portal. If this is your first time logging in, enter your rep code to set up your PIN.
-        </p>
-        <form id="rep-form" className="rep-form rep-form-stacked" onSubmit={login}>
-          <input
-            type="text"
-            id="rep-input"
-            placeholder="Enter your rep code"
-            autoComplete="off"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-          />
-          <div className="admin-pass-field">
-            <input
-              type={showPin ? "text" : "password"}
-              id="rep-pin"
-              placeholder="Enter your PIN"
-              autoComplete="current-password"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-            />
-            <button
-              type="button"
-              className="admin-pass-toggle"
-              aria-label={showPin ? "Hide PIN" : "Show PIN"}
-              aria-pressed={showPin}
-              title={showPin ? "Hide PIN" : "Show PIN"}
-              onClick={() => setShowPin((v) => !v)}
-            >
-              <Icon name={showPin ? "eye-off" : "eye"} />
-            </button>
+      <div className="auth-shell">
+        <section id="rep-login" className="auth-card">
+          <div className="auth-brand">
+            <span className="auth-logo">
+              <span>Gifts by V</span>
+              <span className="brand-accent">F</span>
+            </span>
+            <span className="auth-brand-tag">Sales Rep Tools</span>
           </div>
-          <button type="submit" className="rep-btn" disabled={submitting}>
-            {submitting ? "Checking…" : "Continue"}
-          </button>
-        </form>
-        <p id="rep-error" className={`rep-error${error ? "" : " hidden"}`}>{error}</p>
-      </section>
+
+          <p className="auth-eyebrow">Sales portal</p>
+          <h1 className="auth-title">Rep sign in</h1>
+          <p className="auth-hint">Enter your rep code and PIN to access your sales portal.</p>
+
+          <form id="rep-form" className="auth-form" onSubmit={login}>
+            <label className="auth-field">
+              <span className="auth-label">Rep code</span>
+              <input
+                type="text"
+                id="rep-input"
+                placeholder="Enter your rep code"
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck="false"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+              />
+            </label>
+
+            <label className="auth-field">
+              <span className="auth-label">PIN</span>
+              <span className="admin-pass-field">
+                <input
+                  type={showPin ? "text" : "password"}
+                  id="rep-pin"
+                  placeholder="Enter your PIN"
+                  autoComplete="current-password"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="admin-pass-toggle"
+                  aria-label={showPin ? "Hide PIN" : "Show PIN"}
+                  aria-pressed={showPin}
+                  title={showPin ? "Hide PIN" : "Show PIN"}
+                  onClick={() => setShowPin((v) => !v)}
+                >
+                  <Icon name={showPin ? "eye-off" : "eye"} />
+                </button>
+              </span>
+            </label>
+
+            {error ? (
+              <p id="rep-error" className="auth-error" role="alert">
+                {error}
+              </p>
+            ) : null}
+
+            <button type="submit" className="auth-submit" disabled={submitting}>
+              {submitting ? "Checking…" : "Continue"}
+            </button>
+
+            {pinStatus === "no-pin" ? (
+              <button
+                type="button"
+                className="auth-link"
+                onClick={() => {
+                  setError("");
+                  setNewPin("");
+                  setConfirmPin("");
+                  setStep("setup-pin");
+                }}
+              >
+                First time here? Set up your PIN
+              </button>
+            ) : null}
+          </form>
+        </section>
+      </div>
     );
   }
 
   if (step === "setup-pin") {
     const displayName = rep?.name || rep?.rep_id || input;
     return (
-      <section id="rep-setup-pin" className="rep-section rep-panel">
-        <p
-          className="section-label"
-          style={{
-            color: "var(--gold)",
-            marginBottom: "8px",
-            fontWeight: "600",
-            fontSize: "0.8rem",
-            textTransform: "uppercase",
-            letterSpacing: "1.5px",
-          }}
-        >
-          First-time setup
-        </p>
-        <h2>Set up your login PIN</h2>
-        <p className="rep-hint">
-          Welcome, <strong>{displayName}</strong>! Please choose a secure PIN (at least 4 characters) to protect your sales portal and track your payouts.
-        </p>
-        <form id="rep-setup-form" className="rep-form rep-form-stacked" onSubmit={setupPin}>
-          <div className="admin-pass-field">
-            <input
-              type={showNewPin ? "text" : "password"}
-              id="rep-new-pin"
-              placeholder="Create a new PIN (4+ characters)"
-              autoComplete="new-password"
-              value={newPin}
-              onChange={(e) => setNewPin(e.target.value)}
-              required
-              minLength={4}
-            />
+      <div className="auth-shell">
+        <section id="rep-setup-pin" className="auth-card">
+          <div className="auth-brand">
+            <span className="auth-logo">
+              <span>Gifts by V</span>
+              <span className="brand-accent">F</span>
+            </span>
+            <span className="auth-brand-tag">Sales Rep Tools</span>
+          </div>
+
+          <p className="auth-eyebrow">First-time setup</p>
+          <h1 className="auth-title">Set up your login PIN</h1>
+          <p className="auth-hint">
+            Welcome, <strong>{displayName}</strong>! Choose a secure PIN (at least
+            4 characters) to protect your sales portal and track your payouts.
+          </p>
+
+          <form id="rep-setup-form" className="auth-form" onSubmit={setupPin}>
+            <label className="auth-field">
+              <span className="auth-label">New PIN</span>
+              <span className="admin-pass-field">
+                <input
+                  type={showNewPin ? "text" : "password"}
+                  id="rep-new-pin"
+                  placeholder="Create a new PIN (4+ characters)"
+                  autoComplete="new-password"
+                  value={newPin}
+                  onChange={(e) => setNewPin(e.target.value)}
+                  required
+                  minLength={4}
+                />
+                <button
+                  type="button"
+                  className="admin-pass-toggle"
+                  aria-label={showNewPin ? "Hide PIN" : "Show PIN"}
+                  aria-pressed={showNewPin}
+                  title={showNewPin ? "Hide PIN" : "Show PIN"}
+                  onClick={() => setShowNewPin((v) => !v)}
+                >
+                  <Icon name={showNewPin ? "eye-off" : "eye"} />
+                </button>
+              </span>
+            </label>
+
+            <label className="auth-field">
+              <span className="auth-label">Confirm PIN</span>
+              <span className="admin-pass-field">
+                <input
+                  type={showConfirmPin ? "text" : "password"}
+                  id="rep-confirm-pin"
+                  placeholder="Confirm your new PIN"
+                  autoComplete="new-password"
+                  value={confirmPin}
+                  onChange={(e) => setConfirmPin(e.target.value)}
+                  required
+                  minLength={4}
+                />
+                <button
+                  type="button"
+                  className="admin-pass-toggle"
+                  aria-label={showConfirmPin ? "Hide PIN" : "Show PIN"}
+                  aria-pressed={showConfirmPin}
+                  title={showConfirmPin ? "Hide PIN" : "Show PIN"}
+                  onClick={() => setShowConfirmPin((v) => !v)}
+                >
+                  <Icon name={showConfirmPin ? "eye-off" : "eye"} />
+                </button>
+              </span>
+            </label>
+
+            {error ? (
+              <p id="rep-setup-error" className="auth-error" role="alert">
+                {error}
+              </p>
+            ) : null}
+
+            <button type="submit" className="auth-submit" disabled={submitting}>
+              {submitting ? "Saving PIN…" : "Save PIN & Sign In"}
+            </button>
+
             <button
               type="button"
-              className="admin-pass-toggle"
-              aria-label={showNewPin ? "Hide PIN" : "Show PIN"}
-              aria-pressed={showNewPin}
-              title={showNewPin ? "Hide PIN" : "Show PIN"}
-              onClick={() => setShowNewPin((v) => !v)}
+              className="auth-link"
+              onClick={() => {
+                setStep("login");
+                setNewPin("");
+                setConfirmPin("");
+                setError("");
+              }}
             >
-              <Icon name={showNewPin ? "eye-off" : "eye"} />
+              Back to sign in
             </button>
-          </div>
-          <div className="admin-pass-field">
-            <input
-              type={showConfirmPin ? "text" : "password"}
-              id="rep-confirm-pin"
-              placeholder="Confirm your new PIN"
-              autoComplete="new-password"
-              value={confirmPin}
-              onChange={(e) => setConfirmPin(e.target.value)}
-              required
-              minLength={4}
-            />
-            <button
-              type="button"
-              className="admin-pass-toggle"
-              aria-label={showConfirmPin ? "Hide PIN" : "Show PIN"}
-              aria-pressed={showConfirmPin}
-              title={showConfirmPin ? "Hide PIN" : "Show PIN"}
-              onClick={() => setShowConfirmPin((v) => !v)}
-            >
-              <Icon name={showConfirmPin ? "eye-off" : "eye"} />
-            </button>
-          </div>
-          <button type="submit" className="rep-btn" disabled={submitting}>
-            {submitting ? "Saving PIN…" : "Save PIN & Sign In"}
-          </button>
-          <button
-            type="button"
-            className="rep-btn rep-btn-ghost"
-            style={{ marginTop: "6px" }}
-            onClick={() => {
-              setStep("login");
-              setNewPin("");
-              setConfirmPin("");
-              setError("");
-            }}
-          >
-            Cancel
-          </button>
-        </form>
-        <p id="rep-setup-error" className={`rep-error${error ? "" : " hidden"}`}>{error}</p>
-      </section>
+          </form>
+        </section>
+      </div>
     );
   }
 
@@ -414,7 +505,21 @@ export function RepPortal({ products, commissionRule }) {
   })();
 
   return (
-    <section id="rep-dashboard" className="rep-dashboard">
+    <>
+      <section className="page-hero rep-hero">
+        <div className="page-hero-copy">
+          <p className="section-label">Sales portal</p>
+          <h1>Share gifts and track commission</h1>
+          <p>Login with your rep code to get personalised product links and monitor your confirmed sales.</p>
+        </div>
+        <div className="gift-chips" aria-label="Rep features">
+          <span>Share links</span>
+          <span>Track payouts</span>
+          <span>Earn commission</span>
+        </div>
+      </section>
+
+      <section id="rep-dashboard" className="rep-dashboard">
       {pinNotice ? (
         <div
           className="rep-notice"
@@ -734,6 +839,7 @@ export function RepPortal({ products, commissionRule }) {
           </div>
         </details>
       </div>
-    </section>
+      </section>
+    </>
   );
 }

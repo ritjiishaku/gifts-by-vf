@@ -129,3 +129,22 @@ export async function POST(request) {
     { headers: { "Cache-Control": "no-store" } }
   );
 }
+
+// Read-only status check used by the rep login screen to decide whether to show
+// the "Set up your PIN" link. Returns just { found, hasPin } — never the name,
+// PIN hash, or payouts. Deliberately NOT tied to the POST login brute-force
+// throttle (this is called while typing, and must not lock out real logins).
+export async function GET(request) {
+  const headers = { "Cache-Control": "no-store" };
+  const repCode = String(new URL(request.url).searchParams.get("rep") || "").trim();
+  if (!repCode) {
+    return NextResponse.json({ found: false }, { headers });
+  }
+
+  const rep = await getRepByRepId(repCode);
+  if (!rep || !isActiveRep(rep)) {
+    return NextResponse.json({ found: false }, { headers });
+  }
+
+  return NextResponse.json({ found: true, hasPin: Boolean(rep.pin_hash) }, { headers });
+}
