@@ -69,6 +69,11 @@ nav.scrolled { box-shadow: 0 2px 20px rgba(0,0,0,0.08); }
     text-decoration: none;
     letter-spacing: 1.5px;
 }
+
+.nav-logo:hover,
+.nav-logo:focus {
+    text-decoration: none;
+}
 .nav-logo .brand-accent { color: var(--gold); }
 .nav-tagline {
     font-family: 'Inter', sans-serif;
