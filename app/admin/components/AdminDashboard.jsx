@@ -323,7 +323,7 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
           renderInfo={(row) => (
             <>
               <h4>{row.caption || "Untitled piece"}</h4>
-              <p>{[row.category, row.is_wide ? "wide tile" : ""].filter(Boolean).join(" · ") || "No category"}</p>
+              <p>{[row.category, row.icon ? `icon: ${row.icon}` : "", row.is_wide ? "wide tile" : ""].filter(Boolean).join(" · ") || "No category"}</p>
             </>
           )}
           renderForm={({ row, onClose }) => <AdminPortfolioForm row={row} onClose={onClose} />}

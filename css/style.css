@@ -1295,6 +1295,22 @@ footer {
     transition: transform 0.5s ease;
 }
 .portfolio-item:hover img { transform: scale(1.05); }
+.portfolio-icon {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--gold);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+}
+.portfolio-icon .icon { width: 20px; height: 20px; }
 .portfolio-caption {
     position: absolute;
     left: 0; right: 0; bottom: 0;
@@ -2669,9 +2685,10 @@ body.lightbox-open { overflow: hidden; }
 }
 .admin-modal-head {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 12px 16px;
     margin-bottom: 20px;
 }
 .admin-modal-head h2 { margin: 0; color: var(--dark); font-size: 1.35rem; }
@@ -2705,9 +2722,74 @@ body.lightbox-open { overflow: hidden; }
 .admin-field input:focus,
 .admin-field textarea:focus,
 .admin-field select:focus { outline: 2px solid var(--gold); border-color: transparent; }
-.admin-icon-picker { display: flex; align-items: center; gap: 12px; margin-top: 5px; }
-.admin-icon-picker .why-icon { flex: 0 0 auto; margin-bottom: 0; }
-.admin-icon-picker select { flex: 1 1 auto; margin-top: 0; }
+.admin-field input[type="hidden"] { display: none; }
+.admin-field-label { display: block; color: var(--text-light); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.4px; }
+.admin-icon-picker { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 5px; }
+.admin-icon-current {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 1 auto;
+    max-width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    background: #fff;
+}
+.admin-icon-current .why-icon { margin-bottom: 0; }
+.admin-icon-current-name {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: normal;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.admin-icon-none-mark { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; color: var(--text-light); font-size: 1rem; line-height: 1; }
+.admin-field .admin-icon-search { flex: 1 1 180px; width: auto; min-width: 0; margin-top: 0; font-size: 1rem; }
+.admin-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+    gap: 6px;
+    max-height: 240px;
+    overflow-y: auto;
+    margin-top: 10px;
+    padding: 6px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    background: #fff;
+}
+.admin-icon-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    min-height: 56px;
+    padding: 8px 4px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: none;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.admin-icon-option .icon { width: 22px; height: 22px; }
+.admin-icon-option-label {
+    font-size: 0.6rem;
+    line-height: 1.15;
+    text-align: center;
+    letter-spacing: normal;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.admin-icon-option:hover { background: rgba(198, 167, 100, 0.1); border-color: var(--border-light); color: var(--text); }
+.admin-icon-option.is-selected { border-color: var(--gold); background: rgba(198, 167, 100, 0.14); color: var(--text); }
+.admin-icon-empty { grid-column: 1 / -1; margin: 10px 0; color: var(--text-light); font-size: 0.75rem; text-align: center; }
 .admin-field-hint {
     display: block;
     margin-top: 5px;

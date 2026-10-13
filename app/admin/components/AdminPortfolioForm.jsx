@@ -2,6 +2,7 @@
 
 import { useEffect, useActionState } from "react";
 import { savePortfolioAction } from "../actions";
+import { IconPicker } from "./IconPicker";
 
 export function AdminPortfolioForm({ row, onClose }) {
   const [state, formAction] = useActionState(savePortfolioAction, {});
@@ -62,6 +63,12 @@ export function AdminPortfolioForm({ row, onClose }) {
               placeholder="e.g. 1 (lower shows first)"
             />
           </label>
+          <IconPicker
+            name="icon"
+            value={row.icon}
+            allowNone
+            hint="Optional badge shown on the tile."
+          />
         </div>
 
         <div className="admin-checks">

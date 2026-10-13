@@ -2,6 +2,7 @@
 
 import { validateUrl, directImageUrl, srcVariant } from "@/lib/format";
 import { openLightbox } from "./Lightbox";
+import { Icon } from "./icons";
 
 export function Portfolio({ label, title, rows }) {
   if (!rows || rows.length === 0) return null;
@@ -21,6 +22,11 @@ export function Portfolio({ label, title, rows }) {
             const wide = isWide(row);
             return (
               <div key={`${labelText}-${i}`} className={`portfolio-item${wide ? " wide" : ""} fade-in`}>
+                {row.icon ? (
+                  <span className="portfolio-icon" aria-hidden="true">
+                    <Icon name={String(row.icon).trim().toLowerCase()} />
+                  </span>
+                ) : null}
                 {url ? (
                   <>
                     <button

@@ -300,10 +300,14 @@ export async function saveTestimonialAction(prevState, formData) {
     is_visible: raw.is_visible,
   };
 
+  // `id` is a generated-always identity column, so edit via update and create via
+  // insert (an upsert with an explicit id would be rejected by Postgres).
+  const { id: testimonialId, ...testimonialFields } = testimonial;
   try {
-    const { error } = await supabase()
-      .from("testimonials")
-      .upsert(testimonial, { onConflict: "id" });
+    const query = testimonialId
+      ? supabase().from("testimonials").update(testimonialFields).eq("id", testimonialId)
+      : supabase().from("testimonials").insert(testimonialFields);
+    const { error } = await query;
     if (error) throw error;
     revalidatePath("/admin");
     revalidatePath("/", "layout");
@@ -333,8 +337,16 @@ export async function deleteTestimonialAction(formData) {
 /* ── Shared helpers for simple content rows (Why us / Portfolio / How to order / FAQ) ── */
 
 async function upsertRow(table, payload) {
+  // These tables use `id bigint generated always as identity`, so an upsert that
+  // carries an explicit id is rejected by Postgres ("cannot insert a non-DEFAULT
+  // value into column id"). Update by id when editing, insert when creating.
+  const { id, ...fields } = payload || {};
+  const rowId = Number(id) || 0;
   try {
-    const { error } = await supabase().from(table).upsert(payload, { onConflict: "id" });
+    const query = rowId
+      ? supabase().from(table).update(fields).eq("id", rowId)
+      : supabase().from(table).insert(fields);
+    const { error } = await query;
     if (error) throw error;
     revalidatePath("/admin");
     revalidatePath("/", "layout");
@@ -387,7 +399,9 @@ export async function savePortfolioAction(prevState, formData) {
   const imageUrl = (formData.get("image_url") || "").toString().trim();
   const caption = (formData.get("caption") || "").toString().trim();
   if (!imageUrl && !caption) return internalError("Add an image URL or a caption.");
-  return upsertRow("portfolio", {
+
+  const icon = (formData.get("icon") || "").toString().trim() || null;
+  const payload = {
     id: Number((formData.get("id") || "").toString().trim()) || undefined,
     image_url: imageUrl || null,
     caption: caption || null,
@@ -395,7 +409,28 @@ export async function savePortfolioAction(prevState, formData) {
     is_wide: toBool(formData, "is_wide"),
     display_order: Number(formData.get("display_order")) || 999,
     is_visible: toBool(formData, "is_visible"),
-  });
+  };
+
+  // The optional icon column is added by supabase/migrations/0004_portfolio_icon.sql.
+  // Detect it so the form keeps working (without an icon) until the migration is run.
+  let iconSupported = true;
+  try {
+    const probe = await supabase().from("portfolio").select("icon").limit(1);
+    iconSupported = !probe.error;
+  } catch {
+    iconSupported = false;
+  }
+  if (!iconSupported) {
+    if (icon) {
+      return internalError(
+        "The portfolio icon needs a one-time database update. Run supabase/migrations/0004_portfolio_icon.sql in the Supabase SQL editor, then save again."
+      );
+    }
+    return upsertRow("portfolio", payload);
+  }
+
+  payload.icon = icon;
+  return upsertRow("portfolio", payload);
 }
 
 export async function deletePortfolioAction(formData) {
