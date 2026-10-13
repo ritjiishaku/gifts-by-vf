@@ -13,10 +13,10 @@ export function AdminLogin() {
     <div className="auth-shell">
       <div className="auth-card">
         <div className="auth-brand">
-          <span className="auth-logo">
+          <a href="/#products" className="auth-logo" aria-label="Gifts by VF">
             <span>Gifts by V</span>
             <span className="brand-accent">F</span>
-          </span>
+          </a>
           <span className="auth-brand-tag">Owner Admin</span>
         </div>
 
