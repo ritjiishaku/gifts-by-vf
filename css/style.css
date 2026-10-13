@@ -1,4 +1,4 @@
-/* Google Fonts are loaded via <link> in index.html for better render performance */
+/* Google Fonts are loaded via <link> in app/layout.js for better render performance */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
