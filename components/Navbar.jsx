@@ -16,7 +16,7 @@ export function Navbar({ brandName, brandAccent, settings }) {
   return (
     <nav id="navbar" className={scrolled ? "scrolled" : ""}>
       <div className="nav-inner">
-        <a href="/#products" className="nav-logo" aria-label="Gifts by VF">
+        <a href="/" className="nav-logo" aria-label="Gifts by VF">
           <span className="brand-name">
             <span className="brand-text">{brandName || "Gifts by V"}</span>
             <span className="brand-accent">{brandAccent || "F"}</span>

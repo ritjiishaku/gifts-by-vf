@@ -9,7 +9,7 @@ export default function AdminLayout({ children }) {
   return (
     <div className="page-shell">
       <header className="rep-header">
-        <Link href="/#products" className="nav-logo" aria-label="Gifts by VF">
+        <Link href="/" className="nav-logo" aria-label="Gifts by VF">
           <span className="brand-name">
             <span className="brand-text">Gifts by V</span>
             <span className="brand-accent">F</span>

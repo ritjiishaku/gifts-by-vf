@@ -295,7 +295,7 @@ export function RepPortal({ products, commissionRule }) {
       <div className="auth-shell">
         <section id="rep-login" className="auth-card">
           <div className="auth-brand">
-            <a href="/#products" className="auth-logo" aria-label="Gifts by VF">
+            <a href="/" className="auth-logo" aria-label="Gifts by VF">
               <span>Gifts by V</span>
               <span className="brand-accent">F</span>
             </a>
@@ -381,7 +381,7 @@ export function RepPortal({ products, commissionRule }) {
       <div className="auth-shell">
         <section id="rep-setup-pin" className="auth-card">
           <div className="auth-brand">
-            <a href="/#products" className="auth-logo" aria-label="Gifts by VF">
+            <a href="/" className="auth-logo" aria-label="Gifts by VF">
               <span>Gifts by V</span>
               <span className="brand-accent">F</span>
             </a>
