@@ -256,7 +256,7 @@ export function RepPortal({ products, commissionRule }) {
     if (!Number.isFinite(rate) || rate <= 0) return "";
     const price = priceNumber(p);
     if (price == null || price <= 0) return "";
-    return "≈ ₦" + Math.round((price * rate) / 100).toLocaleString() + " commission";
+    return "≈ ₦" + Math.round((price * rate) / 100).toLocaleString("en-NG") + " commission";
   };
 
   const shareLink = (pid) =>
@@ -496,7 +496,7 @@ export function RepPortal({ products, commissionRule }) {
     (sum, r) => sum + (String(r.status || "").toLowerCase() === "paid" ? parseFloat(r.commission) || 0 : 0),
     0
   );
-  const naira = (n) => "₦" + Math.round(n).toLocaleString();
+  const naira = (n) => "₦" + Math.round(n).toLocaleString("en-NG");
   const canShare = typeof navigator !== "undefined" && "share" in navigator;
 
   const productCountText =
