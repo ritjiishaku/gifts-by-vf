@@ -1654,7 +1654,10 @@ body {
     font-weight: 700;
     letter-spacing: 1.5px;
     color: var(--dark);
+    text-decoration: none;
 }
+.auth-logo:hover,
+.auth-logo:focus { text-decoration: none; }
 .auth-logo .brand-accent { color: var(--gold); }
 .auth-brand-tag {
     font-size: 0.58rem;
