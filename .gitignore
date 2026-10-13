@@ -4,8 +4,6 @@
 sample-data/
 *.md
 !README.md
-!AGENTS.md
-!UPGRADE_PLAN.md
 node_modules
 public/
 .env*
