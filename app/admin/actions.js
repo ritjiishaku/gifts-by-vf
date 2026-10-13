@@ -106,7 +106,7 @@ export async function saveProductAction(prevState, formData) {
 
   try {
     let error;
-    if (id) {
+    if (id > 0) {
       ({ error } = await supabase()
         .from("products")
         .update(payload)
@@ -133,7 +133,7 @@ export async function saveProductAction(prevState, formData) {
 
 export async function deleteProductAction(formData) {
   if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
-  const id = Number(formData.get("id")) || null;
+  const id = Number(formData.get("id")) || 0;
   if (!id) return internalError("Missing product id.");
   try {
     const { error } = await supabase().from("products").delete().eq("id", id);
@@ -211,7 +211,7 @@ export async function deleteSettingAction(formData) {
 
 export async function saveRepAction(prevState, formData) {
   if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
-  const repDbId = Number(formData.get("id")) || null;
+  const repDbId = Number(formData.get("id")) || 0;
   const repId = (formData.get("rep_id") || "").toString().trim();
   if (!repId) return internalError("Rep code is required.");
   const resetPin = toBool(formData, "reset_pin");
@@ -230,7 +230,7 @@ export async function saveRepAction(prevState, formData) {
   try {
     let error;
     let saved = null;
-    if (repDbId) {
+    if (repDbId > 0) {
       ({ error } = await supabase()
         .from("sales_reps")
         .update(rep)
@@ -262,7 +262,7 @@ export async function saveRepAction(prevState, formData) {
 
 export async function deleteRepAction(formData) {
   if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
-  const id = Number(formData.get("id")) || null;
+  const id = Number(formData.get("id")) || 0;
   if (!id) return internalError("Missing rep id.");
   try {
     const { error } = await supabase().from("sales_reps").delete().eq("id", id);
@@ -290,8 +290,8 @@ export async function saveTestimonialAction(prevState, formData) {
   if (!raw.name) return internalError("Name is required.");
   if (!raw.quote) return internalError("Testimonial message is required.");
 
-  const testimonial = {
-    id: Number(raw.id) || undefined,
+  const testimonialId = Number(raw.id) || 0;
+  const testimonialFields = {
     name: raw.name,
     quote: raw.quote,
     source: raw.source || null,
@@ -302,9 +302,8 @@ export async function saveTestimonialAction(prevState, formData) {
 
   // `id` is a generated-always identity column, so edit via update and create via
   // insert (an upsert with an explicit id would be rejected by Postgres).
-  const { id: testimonialId, ...testimonialFields } = testimonial;
   try {
-    const query = testimonialId
+    const query = testimonialId > 0
       ? supabase().from("testimonials").update(testimonialFields).eq("id", testimonialId)
       : supabase().from("testimonials").insert(testimonialFields);
     const { error } = await query;
@@ -320,7 +319,7 @@ export async function saveTestimonialAction(prevState, formData) {
 
 export async function deleteTestimonialAction(formData) {
   if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
-  const id = Number(formData.get("id")) || null;
+  const id = Number(formData.get("id")) || 0;
   if (!id) return internalError("Missing testimonial id.");
   try {
     const { error } = await supabase().from("testimonials").delete().eq("id", id);
@@ -340,10 +339,12 @@ async function upsertRow(table, payload) {
   // These tables use `id bigint generated always as identity`, so an upsert that
   // carries an explicit id is rejected by Postgres ("cannot insert a non-DEFAULT
   // value into column id"). Update by id when editing, insert when creating.
-  const { id, ...fields } = payload || {};
+  const { id, ...rest } = payload || {};
   const rowId = Number(id) || 0;
+  const fields = { ...rest };
+  if ("id" in fields) delete fields.id;
   try {
-    const query = rowId
+    const query = rowId > 0
       ? supabase().from(table).update(fields).eq("id", rowId)
       : supabase().from(table).insert(fields);
     const { error } = await query;
@@ -359,7 +360,7 @@ async function upsertRow(table, payload) {
 
 async function deleteRow(table, formData) {
   if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
-  const id = Number(formData.get("id")) || null;
+  const id = Number(formData.get("id")) || 0;
   if (!id) return internalError("Missing id.");
   try {
     const { error } = await supabase().from(table).delete().eq("id", id);
@@ -380,7 +381,7 @@ export async function saveWhyUsAction(prevState, formData) {
   if (!title) return internalError("Heading is required.");
   if (!description) return internalError("Description is required.");
   return upsertRow("why_us", {
-    id: Number((formData.get("id") || "").toString().trim()) || undefined,
+    id: (formData.get("id") || "").toString().trim(),
     title,
     heading: title,
     description,
@@ -402,7 +403,7 @@ export async function savePortfolioAction(prevState, formData) {
 
   const icon = (formData.get("icon") || "").toString().trim() || null;
   const payload = {
-    id: Number((formData.get("id") || "").toString().trim()) || undefined,
+    id: (formData.get("id") || "").toString().trim(),
     image_url: imageUrl || null,
     caption: caption || null,
     category: (formData.get("category") || "").toString().trim() || null,
@@ -444,7 +445,7 @@ export async function saveHowToAction(prevState, formData) {
   if (!title) return internalError("Step title is required.");
   if (!description) return internalError("Step description is required.");
   return upsertRow("how_to_order", {
-    id: Number((formData.get("id") || "").toString().trim()) || undefined,
+    id: (formData.get("id") || "").toString().trim(),
     title,
     description,
     display_order: Number(formData.get("display_order")) || 999,
@@ -463,7 +464,7 @@ export async function saveFaqAction(prevState, formData) {
   if (!question) return internalError("Question is required.");
   if (!answer) return internalError("Answer is required.");
   return upsertRow("faqs", {
-    id: Number((formData.get("id") || "").toString().trim()) || undefined,
+    id: (formData.get("id") || "").toString().trim(),
     question,
     answer,
     display_order: Number(formData.get("display_order")) || 999,
