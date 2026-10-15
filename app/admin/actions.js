@@ -79,6 +79,36 @@ export async function saveProductAction(prevState, formData) {
 
   if (!raw.name) return internalError("Product name is required.");
   const id = Number(raw.id) || null;
+
+  // Duplicate guard (create only): the same product name in the same category
+  // is very likely the same gift saved twice (slugs are unique, so the DB lets
+  // it through). Block the insert and let the form offer an explicit
+  // "Save anyway" (force=true) override.
+  if (!id && formData.get("force") !== "true") {
+    try {
+      const key = `${slugify(raw.name)}::${slugify(raw.category)}`;
+      const { data: allProducts } = await supabase()
+        .from("products")
+        .select("id, name, category, image_url");
+      const existing = (allProducts || []).filter(
+        (p) => `${slugify(p.name || "")}::${slugify(p.category || "")}` === key
+      );
+      if (existing.length > 0) {
+        return {
+          ok: false,
+          duplicate: true,
+          error: `A product named "${raw.name}" already exists${
+            raw.category ? ` in "${raw.category}"` : ""
+          }. Save anyway if it is a different piece.`,
+          existing: existing.slice(0, 4),
+        };
+      }
+    } catch (err) {
+      // Duplicate guard is best-effort — never block a save because of it.
+      console.error("[admin] duplicateScan:", err.message);
+    }
+  }
+
   const payload = {
     name: raw.name,
     slug: raw.slug || slugify(raw.name),

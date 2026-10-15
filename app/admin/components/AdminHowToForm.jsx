@@ -1,27 +1,34 @@
 "use client";
 
-import { useEffect, useActionState } from "react";
+import { useActionState } from "react";
 import { saveHowToAction } from "../actions";
+import { useAdminForm } from "./useAdminForm";
 
 export function AdminHowToForm({ row, onClose }) {
-  const [state, formAction] = useActionState(saveHowToAction, {});
+  const [state, formAction, pending] = useActionState(saveHowToAction, {});
   const isNew = !row.id;
 
-  useEffect(() => {
-    if (state?.ok) onClose();
-  }, [state, onClose]);
+  const { justSaved, markDirty, requestClose } = useAdminForm({
+    state,
+    pending,
+    onClose,
+  });
 
   return (
     <div
       className="admin-modal"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) requestClose();
       }}
     >
-      <form action={formAction} className="admin-modal-panel admin-modal-panel-narrow">
+      <form
+        action={formAction}
+        className="admin-modal-panel admin-modal-panel-narrow"
+        onChange={markDirty}
+      >
         <div className="admin-modal-head">
           <h2>{isNew ? "Add " : "Edit "}how-to-order step</h2>
-          <button type="button" className="admin-btn admin-btn-ghost" onClick={onClose}>
+          <button type="button" className="admin-btn admin-btn-ghost" onClick={requestClose} disabled={pending}>
             Close
           </button>
         </div>
@@ -72,9 +79,10 @@ export function AdminHowToForm({ row, onClose }) {
         </div>
 
         <div className="admin-form-actions">
-          <button type="submit" className="admin-btn">
-            {isNew ? "Add step" : "Save changes"}
+          <button type="submit" className="admin-btn" disabled={pending}>
+            {pending ? "Saving…" : isNew ? "Add step" : "Save changes"}
           </button>
+          {justSaved ? <p className="admin-saved">✓ Saved</p> : null}
           {state?.error ? <p className="rep-error">{state.error}</p> : null}
         </div>
       </form>

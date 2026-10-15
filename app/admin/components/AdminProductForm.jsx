@@ -1,31 +1,43 @@
 "use client";
 
-import { useEffect, useActionState } from "react";
+import { useState, useActionState } from "react";
 import { saveProductAction } from "../actions";
 import { IconPicker } from "./IconPicker";
+import { useAdminForm } from "./useAdminForm";
 
 export function AdminProductForm({ product, onClose }) {
-  const [state, formAction] = useActionState(saveProductAction, {});
+  const [state, formAction, pending] = useActionState(saveProductAction, {});
+  const [dismissedDuplicate, setDismissedDuplicate] = useState(false);
   const isNew = !product.id;
 
-  useEffect(() => {
-    if (state?.ok) onClose();
-  }, [state, onClose]);
+  const { justSaved, markDirty, requestClose } = useAdminForm({
+    state,
+    pending,
+    onClose,
+  });
+
+  const duplicate = state?.duplicate && !dismissedDuplicate ? state : null;
 
   return (
     <div
       className="admin-modal"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) requestClose();
       }}
     >
-      <form id="admin-product-form" action={formAction} className="admin-modal-panel">
+      <form
+        id="admin-product-form"
+        action={formAction}
+        className="admin-modal-panel"
+        onChange={markDirty}
+      >
         <div className="admin-modal-head">
           <h2>{isNew ? "Add product" : "Edit product"}</h2>
           <button
             type="button"
             className="admin-btn admin-btn-ghost"
-            onClick={onClose}
+            onClick={requestClose}
+            disabled={pending}
           >
             Close
           </button>
@@ -131,11 +143,44 @@ export function AdminProductForm({ product, onClose }) {
           ))}
         </div>
 
+        {duplicate ? (
+          <div className="admin-warning" role="alert">
+            <p className="admin-warning-title">
+              ⚠ A product with this name already exists in this category.
+            </p>
+            <div className="admin-dup-list">
+              {(duplicate.existing || []).map((row) => (
+                <span key={row.id} className="admin-dup-item">
+                  {row.image_url ? <img src={row.image_url} alt="" loading="lazy" /> : null}
+                  {row.name}
+                </span>
+              ))}
+            </div>
+            <p className="admin-warning-hint">
+              Check the existing { (duplicate.existing || []).length === 1 ? "product" : "products" }
+              {" "}above — or save this one anyway if it really is a different piece.
+            </p>
+            <div className="admin-warning-actions">
+              <button type="submit" name="force" value="true" className="admin-btn">
+                Save anyway
+              </button>
+              <button
+                type="button"
+                className="admin-btn admin-btn-ghost"
+                onClick={() => setDismissedDuplicate(true)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         <div className="admin-form-actions">
-          <button type="submit" className="admin-btn">
-            {isNew ? "Create product" : "Save changes"}
+          <button type="submit" className="admin-btn" disabled={pending}>
+            {pending ? "Saving…" : isNew ? "Create product" : "Save changes"}
           </button>
-          {state?.error ? <p className="rep-error">{state.error}</p> : null}
+          {justSaved ? <p className="admin-saved">✓ Saved</p> : null}
+          {state?.error && !duplicate ? <p className="rep-error">{state.error}</p> : null}
         </div>
       </form>
     </div>

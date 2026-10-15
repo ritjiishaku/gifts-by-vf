@@ -2915,6 +2915,115 @@ body.lightbox-open { overflow: hidden; }
     font-size: 0.82rem;
     font-weight: 600;
 }
+
+/* ── Admin save feedback / list filters / duplicate warnings ── */
+.admin-btn:disabled,
+.admin-btn[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+.admin-list-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    flex: 1 1 auto;
+}
+.admin-list-filters .admin-search { max-width: 300px; }
+.admin-filter {
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--text);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.admin-filter:focus { outline: 2px solid var(--gold); border-color: transparent; }
+.admin-list-count {
+    margin: 12px 0 0;
+    color: var(--text-light);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+}
+.admin-tag-warn {
+    background: #fdf1dc;
+    color: #a56a00;
+}
+.admin-dup-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    border: 1px solid #e8c98a;
+    border-radius: 10px;
+    background: #fdf6e7;
+    color: #7a5200;
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+.admin-dup-banner .admin-btn {
+    min-height: 36px;
+    padding: 7px 14px;
+    border-color: #a56a00;
+    background: none;
+    color: #a56a00;
+}
+.admin-dup-banner .admin-btn:hover { background: #a56a00; color: #fff; }
+.admin-warning {
+    padding: 14px 16px;
+    margin-top: 18px;
+    border: 1px solid #e8c98a;
+    border-radius: 10px;
+    background: #fdf6e7;
+    color: #7a5200;
+}
+.admin-warning-title {
+    margin: 0 0 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+.admin-warning-hint {
+    margin: 10px 0 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+.admin-warning-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+.admin-dup-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.admin-dup-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px 6px 6px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #e8c98a;
+    color: var(--dark);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+.admin-dup-item img {
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    object-fit: cover;
+}
 .admin-settings-advanced {
     margin-top: 26px;
     padding-top: 20px;

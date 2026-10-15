@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useActionState } from "react";
 import { saveRepAction } from "../actions";
+import { useAdminForm } from "./useAdminForm";
 
 const FALLBACK_PORTAL_URL = "https://giftsbyvf.vercel.app/reps";
 
@@ -40,12 +41,21 @@ function normalizePhone(input) {
 }
 
 export function AdminRepForm({ rep, onClose }) {
-  const [state, formAction] = useActionState(saveRepAction, {});
+  const [state, formAction, pending] = useActionState(saveRepAction, {});
   const [portalUrl, setPortalUrl] = useState(FALLBACK_PORTAL_URL);
   const [copied, setCopied] = useState("");
   const [phone, setPhone] = useState(rep.whatsapp || "");
   const isNew = !rep.id;
   const inviteMode = Boolean(rep.inviteMode);
+
+  const { justSaved, markDirty, requestClose } = useAdminForm({
+    state,
+    pending,
+    // New reps (and the explicit invite flow) show the invite panel instead of
+    // closing, so the modal must not auto-close after a successful save.
+    autoClose: !(isNew && state?.rep) && !inviteMode,
+    onClose,
+  });
 
   const addedRep = state?.ok && isNew && state.rep ? state.rep : null;
   const inviteRep =
@@ -56,12 +66,6 @@ export function AdminRepForm({ rep, onClose }) {
       setPortalUrl(`${window.location.origin}/reps`);
     }
   }, []);
-
-  // Only close automatically for edits / non-invite cases. New reps (and the
-  // explicit invite flow) get the invite panel so details can be copied/shared.
-  useEffect(() => {
-    if (state?.ok && !(isNew && state.rep) && !inviteMode) onClose();
-  }, [state, isNew, inviteMode, onClose]);
 
   const handleCopy = (text, key) => {
     copyText(text).then(() => {
@@ -186,17 +190,22 @@ export function AdminRepForm({ rep, onClose }) {
     <div
       className="admin-modal"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) requestClose();
       }}
     >
-      <form action={formAction} className="admin-modal-panel admin-modal-panel-narrow">
+      <form
+        action={formAction}
+        className="admin-modal-panel admin-modal-panel-narrow"
+        onChange={markDirty}
+      >
         <input type="hidden" name="id" value={rep.id || ""} />
         <div className="admin-modal-head">
           <h2>{isNew ? "Add rep" : "Edit rep"}</h2>
           <button
             type="button"
             className="admin-btn admin-btn-ghost"
-            onClick={onClose}
+            onClick={requestClose}
+            disabled={pending}
           >
             Close
           </button>
@@ -264,9 +273,10 @@ export function AdminRepForm({ rep, onClose }) {
         </div>
 
         <div className="admin-form-actions">
-          <button type="submit" className="admin-btn">
-            {isNew ? "Create rep" : "Save changes"}
+          <button type="submit" className="admin-btn" disabled={pending}>
+            {pending ? "Saving…" : isNew ? "Create rep" : "Save changes"}
           </button>
+          {justSaved && !isNew ? <p className="admin-saved">✓ Saved</p> : null}
           {state?.error ? <p className="rep-error">{state.error}</p> : null}
         </div>
       </form>

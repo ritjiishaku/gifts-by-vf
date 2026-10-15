@@ -14,6 +14,7 @@ import {
   saveSettingsAction,
   deleteSettingAction,
 } from "../actions";
+import { matchesQuery, sortRows, visFilter, dupKey, duplicateKeySet } from "@/lib/admin-list";
 import { SETTINGS_GROUPS } from "@/lib/settings-schema";
 import { DEFAULTS } from "@/lib/site";
 import { Icon } from "@/components/icons";
@@ -26,10 +27,18 @@ import { AdminHowToForm } from "./AdminHowToForm";
 import { AdminFaqForm } from "./AdminFaqForm";
 import { ContentRowsPanel } from "./ContentRowsPanel";
 
+const PRODUCT_SEARCH_KEYS = ["name", "category", "subcategory", "product_type", "material", "occasion", "slug", "size"];
+const TESTIMONIAL_SEARCH_KEYS = ["name", "source", "quote"];
+const REP_SEARCH_KEYS = ["name", "rep_id"];
+
 export function AdminDashboard({ settings, products, reps, testimonials, whyUs, portfolio, howTo, faqs }) {
   const [tab, setTab] = useState("settings");
-  const [query, setQuery] = useState("");
-  const [testimonialQuery, setTestimonialQuery] = useState("");
+  // Search / sort / filter state is kept PER TAB and survives tab switches.
+  const [queries, setQueries] = useState({});
+  const [sorts, setSorts] = useState({});
+  const [visModes, setVisModes] = useState({});
+  const [repVis, setRepVis] = useState("all");
+  const [dupsOnly, setDupsOnly] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [addingProduct, setAddingProduct] = useState(false);
   const [editingRep, setEditingRep] = useState(null);
@@ -37,24 +46,41 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
   const [editingTestimonial, setEditingTestimonial] = useState(null);
   const [addingTestimonial, setAddingTestimonial] = useState(false);
 
+  const query = queries[tab] || "";
+  const setQuery = (value) => setQueries((prev) => ({ ...prev, [tab]: value }));
+  const sort = sorts[tab] || "order";
+  const setSort = (value) => setSorts((prev) => ({ ...prev, [tab]: value }));
+  const vis = visModes[tab] || "all";
+  const setVis = (value) => setVisModes((prev) => ({ ...prev, [tab]: value }));
+
+  // Products sharing a (normalized) name + category — likely saved twice.
+  const duplicateKeys = useMemo(() => duplicateKeySet(products), [products]);
+
   const filtered = useMemo(() => {
-    const q = String(query || "").trim().toLowerCase();
-    if (!q) return products || [];
-    return (products || []).filter((p) =>
-      [p.name, p.category, p.product_type, p.material, p.slug]
-        .join(" ")
-        .toLowerCase()
-        .includes(q)
+    let rows = (products || []).filter((p) => matchesQuery(p, PRODUCT_SEARCH_KEYS, query));
+    rows = visFilter(rows, vis);
+    rows = sortRows(rows, sort);
+    if (dupsOnly) rows = rows.filter((p) => duplicateKeys.has(dupKey(p)));
+    return rows;
+  }, [products, query, sort, vis, dupsOnly, duplicateKeys]);
+
+  const filteredReps = useMemo(() => {
+    let rows = (reps || []).filter((r) => matchesQuery(r, REP_SEARCH_KEYS, query));
+    if (repVis !== "all") {
+      rows = rows.filter((r) => (repVis === "active" ? r.is_active !== false : r.is_active === false));
+    }
+    return rows.sort((a, b) =>
+      String(a.name || a.rep_id || "").localeCompare(String(b.name || b.rep_id || ""), undefined, {
+        sensitivity: "base",
+      })
     );
-  }, [products, query]);
+  }, [reps, query, repVis]);
 
   const filteredTestimonials = useMemo(() => {
-    const q = String(testimonialQuery || "").trim().toLowerCase();
-    if (!q) return testimonials || [];
-    return (testimonials || []).filter((t) =>
-      [t.name, t.source, t.quote].join(" ").toLowerCase().includes(q)
-    );
-  }, [testimonials, testimonialQuery]);
+    let rows = (testimonials || []).filter((t) => matchesQuery(t, TESTIMONIAL_SEARCH_KEYS, query));
+    rows = visFilter(rows, vis);
+    return sortRows(rows, sort);
+  }, [testimonials, query, sort, vis]);
 
   const closeProductForm = () => {
     setEditingProduct(null);
@@ -99,11 +125,7 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
             role="tab"
             aria-selected={tab === key}
             className="admin-tab"
-            onClick={() => {
-              setTab(key);
-              setQuery("");
-              setTestimonialQuery("");
-            }}
+            onClick={() => setTab(key)}
           >
             {label}
           </button>
@@ -115,14 +137,36 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
       {tab === "products" ? (
         <div>
           <div className="admin-toolbar">
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search products by name or category…"
-              className="admin-search"
-              aria-label="Search products"
-            />
+            <div className="admin-list-filters">
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search name, category, material…"
+                className="admin-search"
+                aria-label="Search products"
+              />
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="admin-filter"
+                aria-label="Sort products"
+              >
+                <option value="order">Sort: display order</option>
+                <option value="name">Sort: name A–Z</option>
+                <option value="newest">Sort: newest first</option>
+              </select>
+              <select
+                value={vis}
+                onChange={(e) => setVis(e.target.value)}
+                className="admin-filter"
+                aria-label="Filter products by visibility"
+              >
+                <option value="all">All</option>
+                <option value="visible">Visible only</option>
+                <option value="hidden">Hidden only</option>
+              </select>
+            </div>
             <button
               type="button"
               className="admin-btn"
@@ -131,6 +175,23 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
               + Add product
             </button>
           </div>
+
+          {duplicateKeys.size > 0 || dupsOnly ? (
+            <div className="admin-dup-banner" role="status">
+              <span>
+                {duplicateKeys.size > 0
+                  ? `⚠ ${duplicateKeys.size} product ${duplicateKeys.size === 1 ? "name" : "names"} look like duplicates (same name + category). Review or delete the extra rows.`
+                  : "✓ No duplicate product names left."}
+              </span>
+              <button
+                type="button"
+                className="admin-btn admin-btn-ghost"
+                onClick={() => setDupsOnly((v) => !v)}
+              >
+                {dupsOnly ? "Show all products" : "Show only duplicates"}
+              </button>
+            </div>
+          ) : null}
 
           <div className="admin-list">
             {filtered.map((p) => (
@@ -150,6 +211,11 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
                   <span className="admin-tag">{p.price || "n/a"}</span>
                   <span className="admin-tag">{p.is_visible ? "visible" : "hidden"}</span>
                   <span className="admin-tag">{p.in_stock ? "in stock" : "sold out"}</span>
+                  {duplicateKeys.has(dupKey(p)) ? (
+                    <span className="admin-tag admin-tag-warn" title="Another product has this name in this category">
+                      duplicate name
+                    </span>
+                  ) : null}
                 </div>
                 <div className="admin-actions">
                   <button
@@ -175,15 +241,44 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
               </div>
             ))}
             {filtered.length === 0 ? (
-              <p className="rep-empty">No products found{query ? ` for “${query}”` : ""}.</p>
+              <p className="rep-empty">
+                {dupsOnly
+                  ? "No duplicate products — nice."
+                  : `No products found${query ? ` for “${query}”` : ""}.`}
+              </p>
             ) : null}
           </div>
+          {query.trim() || vis !== "all" || dupsOnly || sort !== "order" ? (
+            <p className="admin-list-count">
+              Showing {filtered.length} of {(products || []).length} products
+            </p>
+          ) : null}
         </div>
       ) : null}
 
       {tab === "reps" ? (
         <div>
-          <div className="admin-toolbar admin-toolbar-end">
+          <div className="admin-toolbar">
+            <div className="admin-list-filters">
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search reps by name or code…"
+                className="admin-search"
+                aria-label="Search sales reps"
+              />
+              <select
+                value={repVis}
+                onChange={(e) => setRepVis(e.target.value)}
+                className="admin-filter"
+                aria-label="Filter reps by status"
+              >
+                <option value="all">All</option>
+                <option value="active">Active only</option>
+                <option value="inactive">Inactive only</option>
+              </select>
+            </div>
             <button
               type="button"
               className="admin-btn"
@@ -193,7 +288,7 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
             </button>
           </div>
           <div className="admin-list">
-            {(reps || []).map((r) => (
+            {filteredReps.map((r) => (
               <div key={r.id} className="admin-row">
                 <div className="admin-row-info">
                   <h4>{r.name || r.rep_id}</h4>
@@ -237,7 +332,11 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
                 </div>
               </div>
             ))}
-            {reps.length === 0 ? <p className="rep-empty">No sales reps yet.</p> : null}
+            {filteredReps.length === 0 ? (
+              <p className="rep-empty">
+                {reps.length === 0 ? "No sales reps yet." : `No reps found${query ? ` for “${query}”` : ""}.`}
+              </p>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -245,14 +344,36 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
       {tab === "testimonials" ? (
         <div>
           <div className="admin-toolbar">
-            <input
-              type="search"
-              value={testimonialQuery}
-              onChange={(e) => setTestimonialQuery(e.target.value)}
-              placeholder="Search testimonials by name, source or message…"
-              className="admin-search"
-              aria-label="Search testimonials"
-            />
+            <div className="admin-list-filters">
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search name, source or message…"
+                className="admin-search"
+                aria-label="Search testimonials"
+              />
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="admin-filter"
+                aria-label="Sort testimonials"
+              >
+                <option value="order">Sort: display order</option>
+                <option value="name">Sort: name A–Z</option>
+                <option value="newest">Sort: newest first</option>
+              </select>
+              <select
+                value={vis}
+                onChange={(e) => setVis(e.target.value)}
+                className="admin-filter"
+                aria-label="Filter testimonials by visibility"
+              >
+                <option value="all">All</option>
+                <option value="visible">Visible only</option>
+                <option value="hidden">Hidden only</option>
+              </select>
+            </div>
             <button
               type="button"
               className="admin-btn"
@@ -300,9 +421,16 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
               </div>
             ))}
             {filteredTestimonials.length === 0 ? (
-              <p className="rep-empty">No testimonials yet{testimonialQuery ? ` for “${testimonialQuery}”` : ""}.</p>
+              <p className="rep-empty">
+                No testimonials yet{query ? ` for “${query}”` : ""}.
+              </p>
             ) : null}
           </div>
+          {query.trim() || vis !== "all" || sort !== "order" ? (
+            <p className="admin-list-count">
+              Showing {filteredTestimonials.length} of {(testimonials || []).length} testimonials
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -313,6 +441,16 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
           emptyText="No portfolio pieces yet."
           confirmText={(r) => `Delete “${r.caption || "this portfolio piece"}”?`}
           deleteAction={deletePortfolioAction}
+          searchKeys={["caption", "category", "icon"]}
+          searchPlaceholder="Search portfolio by caption or category…"
+          sortable
+          filterVisibility
+          query={queries.portfolio || ""}
+          onQueryChange={(v) => setQueries((prev) => ({ ...prev, portfolio: v }))}
+          sort={sorts.portfolio || "order"}
+          onSortChange={(v) => setSorts((prev) => ({ ...prev, portfolio: v }))}
+          vis={visModes.portfolio || "all"}
+          onVisChange={(v) => setVisModes((prev) => ({ ...prev, portfolio: v }))}
           renderThumb={(row) =>
             row.image_url ? (
               <img src={row.image_url} alt="" loading="lazy" />
@@ -337,6 +475,16 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
           emptyText="No “Why us” cards yet."
           confirmText={(r) => `Delete “${r.title || r.heading || "this card"}”?`}
           deleteAction={deleteWhyUsAction}
+          searchKeys={["title", "heading", "description"]}
+          searchPlaceholder="Search cards…"
+          sortable
+          filterVisibility
+          query={queries.whyUs || ""}
+          onQueryChange={(v) => setQueries((prev) => ({ ...prev, whyUs: v }))}
+          sort={sorts.whyUs || "order"}
+          onSortChange={(v) => setSorts((prev) => ({ ...prev, whyUs: v }))}
+          vis={visModes.whyUs || "all"}
+          onVisChange={(v) => setVisModes((prev) => ({ ...prev, whyUs: v }))}
           renderThumb={(row) => <Icon name={String(row.icon || "").trim().toLowerCase()} size={26} />}
           renderInfo={(row) => (
             <>
@@ -355,6 +503,16 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
           emptyText="No custom steps yet — the site falls back to the built-in steps."
           confirmText={(r) => `Delete step “${r.title || "Untitled"}”?`}
           deleteAction={deleteHowToAction}
+          searchKeys={["title", "description"]}
+          searchPlaceholder="Search steps…"
+          sortable
+          filterVisibility
+          query={queries.howTo || ""}
+          onQueryChange={(v) => setQueries((prev) => ({ ...prev, howTo: v }))}
+          sort={sorts.howTo || "order"}
+          onSortChange={(v) => setSorts((prev) => ({ ...prev, howTo: v }))}
+          vis={visModes.howTo || "all"}
+          onVisChange={(v) => setVisModes((prev) => ({ ...prev, howTo: v }))}
           renderThumb={(_row, i) => i + 1}
           renderInfo={(row) => (
             <>
@@ -373,6 +531,16 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
           emptyText="No FAQs yet."
           confirmText={(r) => `Delete FAQ “${r.question || "this item"}”?`}
           deleteAction={deleteFaqAction}
+          searchKeys={["question", "answer"]}
+          searchPlaceholder="Search questions or answers…"
+          sortable
+          filterVisibility
+          query={queries.faqs || ""}
+          onQueryChange={(v) => setQueries((prev) => ({ ...prev, faqs: v }))}
+          sort={sorts.faqs || "order"}
+          onSortChange={(v) => setSorts((prev) => ({ ...prev, faqs: v }))}
+          vis={visModes.faqs || "all"}
+          onVisChange={(v) => setVisModes((prev) => ({ ...prev, faqs: v }))}
           renderThumb={(row) => String(row.question || "?").charAt(0).toUpperCase()}
           renderInfo={(row) => (
             <>
@@ -510,7 +678,7 @@ function ContentSettingsForm({ settings }) {
 }
 
 function AddSettingForm({ onDone }) {
-  const [state, formAction] = useActionState(saveSettingAction, {});
+  const [state, formAction, pending] = useActionState(saveSettingAction, {});
   useEffect(() => {
     if (state?.ok) onDone();
   }, [state, onDone]);
@@ -518,8 +686,8 @@ function AddSettingForm({ onDone }) {
     <form action={formAction} className="admin-setting-form">
       <input name="key" placeholder="Setting name (e.g. hero_title)" className="admin-search" />
       <input name="value" placeholder="Setting value" className="admin-search" />
-      <button type="submit" className="admin-btn">
-        Save
+      <button type="submit" className="admin-btn" disabled={pending}>
+        {pending ? "Saving…" : "Save"}
       </button>
       {state?.error ? <p className="rep-error">{state.error}</p> : null}
     </form>
@@ -527,15 +695,15 @@ function AddSettingForm({ onDone }) {
 }
 
 function EditSettingRow({ row }) {
-  const [state, formAction] = useActionState(saveSettingAction, {});
+  const [state, formAction, pending] = useActionState(saveSettingAction, {});
   return (
     <form action={formAction} className="admin-setting-row">
       <input type="hidden" name="key" value={row.key} />
       <code>{row.key}</code>
       <input name="value" defaultValue={row.value} placeholder="Setting value" className="admin-search" />
       <div className="admin-actions">
-        <button type="submit" className="admin-btn">
-          Save
+        <button type="submit" className="admin-btn" disabled={pending}>
+          {pending ? "Saving…" : "Save"}
         </button>
         <button
           type="submit"

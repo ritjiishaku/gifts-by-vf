@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useActionState } from "react";
+import { useActionState } from "react";
 import { saveTestimonialAction } from "../actions";
+import { useAdminForm } from "./useAdminForm";
 
 const SOURCE_SUGGESTIONS = [
   "Facebook",
@@ -13,27 +14,34 @@ const SOURCE_SUGGESTIONS = [
 ];
 
 export function AdminTestimonialsForm({ testimonial, onClose }) {
-  const [state, formAction] = useActionState(saveTestimonialAction, {});
+  const [state, formAction, pending] = useActionState(saveTestimonialAction, {});
   const isNew = !testimonial.id;
 
-  useEffect(() => {
-    if (state?.ok) onClose();
-  }, [state, onClose]);
+  const { justSaved, markDirty, requestClose } = useAdminForm({
+    state,
+    pending,
+    onClose,
+  });
 
   return (
     <div
       className="admin-modal"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) requestClose();
       }}
     >
-      <form action={formAction} className="admin-modal-panel admin-modal-panel-narrow">
+      <form
+        action={formAction}
+        className="admin-modal-panel admin-modal-panel-narrow"
+        onChange={markDirty}
+      >
         <div className="admin-modal-head">
           <h2>{isNew ? "Add testimonial" : "Edit testimonial"}</h2>
           <button
             type="button"
             className="admin-btn admin-btn-ghost"
-            onClick={onClose}
+            onClick={requestClose}
+            disabled={pending}
           >
             Close
           </button>
@@ -110,9 +118,10 @@ export function AdminTestimonialsForm({ testimonial, onClose }) {
         </div>
 
         <div className="admin-form-actions">
-          <button type="submit" className="admin-btn">
-            {isNew ? "Add testimonial" : "Save changes"}
+          <button type="submit" className="admin-btn" disabled={pending}>
+            {pending ? "Saving…" : isNew ? "Add testimonial" : "Save changes"}
           </button>
+          {justSaved ? <p className="admin-saved">✓ Saved</p> : null}
           {state?.error ? <p className="rep-error">{state.error}</p> : null}
         </div>
       </form>
