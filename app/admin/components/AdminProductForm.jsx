@@ -3,6 +3,7 @@
 import { useState, useActionState } from "react";
 import { saveProductAction } from "../actions";
 import { IconPicker } from "./IconPicker";
+import { ImageField } from "./ImageField";
 import { useAdminForm } from "./useAdminForm";
 
 export function AdminProductForm({ product, onClose }) {
@@ -99,10 +100,13 @@ export function AdminProductForm({ product, onClose }) {
             value={product.icon}
             hint="Optional — the glyph shown on the product card."
           />
-          <label className="admin-field admin-field-wide">
-            Image URL
-            <input name="image_url" defaultValue={product.image_url || ""} placeholder="Paste an image link (Google Drive or website)" />
-          </label>
+          <ImageField
+            name="image_url"
+            value={product.image_url}
+            folder="products"
+            label="Image"
+            hint="Upload a photo, or paste a link. Large photos are resized automatically."
+          />
           <label className="admin-field admin-field-wide">
             Video URL (YouTube / Drive / mp4)
             <input name="video_url" defaultValue={product.video_url || ""} placeholder="Paste a YouTube, Google Drive, or .mp4 / .webm link" />

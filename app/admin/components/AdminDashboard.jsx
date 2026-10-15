@@ -26,6 +26,8 @@ import { AdminPortfolioForm } from "./AdminPortfolioForm";
 import { AdminHowToForm } from "./AdminHowToForm";
 import { AdminFaqForm } from "./AdminFaqForm";
 import { ContentRowsPanel } from "./ContentRowsPanel";
+import { ImageField } from "./ImageField";
+import { MigrateImages } from "./MigrateImages";
 
 const PRODUCT_SEARCH_KEYS = ["name", "category", "subcategory", "product_type", "material", "occasion", "slug", "size"];
 const TESTIMONIAL_SEARCH_KEYS = ["name", "source", "quote"];
@@ -584,6 +586,8 @@ function SettingsTab({ settings }) {
     <div>
       <ContentSettingsForm settings={settings} />
 
+      <MigrateImages />
+
       <details className="admin-settings-advanced">
         <summary>Advanced — all settings keys</summary>
         <div className="admin-toolbar">
@@ -644,23 +648,34 @@ function ContentSettingsForm({ settings }) {
           <fieldset key={group.title} className="admin-settings-group">
             <legend>{group.title}</legend>
             <div className="admin-form-grid">
-              {group.fields.map((field) => (
-                <label
-                  key={field.key}
-                  className={`admin-field${field.wide ? " admin-field-wide" : ""}`}
-                >
-                  {field.label}
-                  {field.type === "textarea" ? (
-                    <textarea
-                      name={field.key}
-                      rows={2}
-                      placeholder={placeholderFor(field)}
-                    />
-                  ) : (
-                    <input name={field.key} placeholder={placeholderFor(field)} />
-                  )}
-                </label>
-              ))}
+              {group.fields.map((field) =>
+                /image_url$/i.test(field.key) ? (
+                  <ImageField
+                    key={field.key}
+                    name={field.key}
+                    value={values[field.key] || ""}
+                    folder="site"
+                    label={field.label}
+                    hint="Upload a photo, or paste a link."
+                  />
+                ) : (
+                  <label
+                    key={field.key}
+                    className={`admin-field${field.wide ? " admin-field-wide" : ""}`}
+                  >
+                    {field.label}
+                    {field.type === "textarea" ? (
+                      <textarea
+                        name={field.key}
+                        rows={2}
+                        placeholder={placeholderFor(field)}
+                      />
+                    ) : (
+                      <input name={field.key} placeholder={placeholderFor(field)} />
+                    )}
+                  </label>
+                )
+              )}
             </div>
           </fieldset>
         ))}

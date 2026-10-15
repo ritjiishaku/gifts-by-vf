@@ -24,6 +24,7 @@ import { taxonomyCategoryForProduct, taxonomyProductTypeForProduct } from "@/lib
 import { Icon, WaIcon } from "@/components/icons";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { ProductCard } from "@/components/ProductCard";
+import { SiteImage } from "@/components/SiteImage";
 
 export const revalidate = 60;
 
@@ -142,7 +143,13 @@ export default async function ProductPage({ params }) {
             <div className="product-detail-media">
               <div className={`product-img${image ? "" : " no-image"}`}>
                 {image ? (
-                  <img src={image} alt={product.name} decoding="async" />
+                  <SiteImage
+                    src={image}
+                    alt={product.name}
+                    sizes="(min-width: 900px) 50vw, 100vw"
+                    priority
+                    legacyWidths={[800, 1200, 1600]}
+                  />
                 ) : null}
                 <div className="product-icon-fallback">
                   <Icon name={String(product.icon || category || "").trim().toLowerCase()} />

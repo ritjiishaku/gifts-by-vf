@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/icons";
+import { SiteImage } from "@/components/SiteImage";
 import {
   slugify,
   priceNumber,
@@ -729,15 +730,16 @@ export function RepPortal({ products, commissionRule }) {
                   >
                     <div className={`rep-product-thumb${img ? "" : " no-image"}`}>
                       {img ? (
-                        <img
+                        <SiteImage
                           src={img}
                           alt=""
-                          loading="lazy"
-                          decoding="async"
+                          sizes="64px"
+                          legacyWidths={[96, 192, 320]}
                           onError={(e) => {
                             const el = e.currentTarget;
                             if (!el.dataset.retried) {
                               el.dataset.retried = "true";
+                              el.removeAttribute("srcset");
                               el.src = img;
                             } else {
                               el.parentNode?.classList.add("no-image");

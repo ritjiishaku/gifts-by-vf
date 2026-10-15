@@ -31,6 +31,8 @@ Bespoke gifts storefront — customised jewellery, acrylic frames/prints, brand 
   - Products, Sales reps, Testimonials, Portfolio, Why Us, How to Order, FAQ
 - Searchable icon picker for product, portfolio and Why-Us icons
 - Per-rep invite/share panel and PIN reset
+- **Image uploads** — pick a file and it's downscaled in the browser, stored in a public Supabase Storage bucket, and served via `next/image` (automatic resize + WebP/AVIF). A paste-a-link field remains for any external URL
+- **One-click image migration** — copies images still hosted on Google Drive or other sites into Supabase Storage, updating each record's URL (safe to re-run)
 
 ---
 
@@ -69,6 +71,7 @@ SQL is kept in `supabase/migrations/` and versioned in git:
 | `0002_rep_pins.sql` | `sales_reps.pin_hash` |
 | `0003_backfill_product_slugs.sql` | Populates `products.slug` (idempotent) |
 | `0004_portfolio_icon.sql` | `portfolio.icon` |
+| `0005_image_storage.sql` | Public `images` Storage bucket + read policy (for uploaded/migrated images) |
 
 Apply them in order, either in the **Supabase Dashboard → SQL Editor** (paste and run), or with the CLI after `supabase link`:
 
@@ -155,13 +158,13 @@ Preserved URL params: `/?p=<slug>` (deep link), `?ref=<rep_id>` (referral), `?cl
 │   ├── admin/                      # Owner CMS (passphrase-gated)
 │   │   ├── page.js
 │   │   ├── actions.js              # Server actions (all writes)
-│   │   └── components/            # AdminDashboard, forms, IconPicker, AdminLogin
+│   │   └── components/            # AdminDashboard, forms, IconPicker, ImageField, MigrateImages, AdminLogin
 │   ├── reps/                       # Sales-rep portal
 │   ├── api/reps/route.js           # Rep auth + PIN setup
 │   ├── layout.js                   # Root layout, global CSS, site metadata
 │   ├── not-found.js
 │   └── icon.svg
-├── components/                     # Storefront & shared UI (Navbar, Hero, Catalogue, …)
+├── components/                     # Storefront & shared UI (Navbar, Hero, Catalogue, SiteImage, …)
 ├── css/style.css                   # Global styles
 ├── lib/
 │   ├── supabase.js                 # Server-side Supabase client (service role)

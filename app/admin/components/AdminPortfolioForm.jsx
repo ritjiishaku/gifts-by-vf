@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { savePortfolioAction } from "../actions";
 import { IconPicker } from "./IconPicker";
+import { ImageField } from "./ImageField";
 import { useAdminForm } from "./useAdminForm";
 
 export function AdminPortfolioForm({ row, onClose }) {
@@ -37,14 +38,13 @@ export function AdminPortfolioForm({ row, onClose }) {
         <input type="hidden" name="id" value={row.id || ""} />
 
         <div className="admin-form-grid">
-          <label className="admin-field admin-field-wide">
-            Image URL
-            <input
-              name="image_url"
-              defaultValue={row.image_url || ""}
-              placeholder="Paste an image link (Google Drive or website)"
-            />
-          </label>
+          <ImageField
+            name="image_url"
+            value={row.image_url}
+            folder="portfolio"
+            label="Image"
+            hint="Upload a photo, or paste a link."
+          />
           <label className="admin-field admin-field-wide">
             Caption
             <input

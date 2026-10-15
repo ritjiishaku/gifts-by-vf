@@ -10,6 +10,7 @@ import {
   isFeatured,
 } from "@/lib/format";
 import { taxonomyCategoryForProduct } from "@/lib/taxonomy";
+import { SiteImage } from "./SiteImage";
 
 export function CategoryExplorer({ taxonomy, products, settings }) {
   if (!Array.isArray(taxonomy) || taxonomy.length !== 4) return null;
@@ -71,12 +72,11 @@ export function CategoryExplorer({ taxonomy, products, settings }) {
             <i>Gifts by VF</i>
           </span>
           {image ? (
-            <img
+            <SiteImage
               src={image}
-              data-cover-fallback={coverFallback || undefined}
               alt=""
-              loading="lazy"
-              decoding="async"
+              sizes="(min-width: 768px) 25vw, 50vw"
+              legacyWidths={[400, 800, 1200]}
               onError={onImgError}
             />
           ) : null}

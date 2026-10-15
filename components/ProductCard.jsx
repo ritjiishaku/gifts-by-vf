@@ -2,6 +2,7 @@
 
 import { Icon, WaIcon } from "./icons";
 import { openLightbox } from "./Lightbox";
+import { SiteImage } from "./SiteImage";
 import {
   validateUrl,
   directImageUrl,
@@ -9,7 +10,6 @@ import {
   formatNaira,
   isSoldOut,
   isDriveUrl,
-  srcVariant,
   slugify,
   isFeatured,
 } from "@/lib/format";
@@ -37,9 +37,6 @@ export function ProductCard({ p, pid, settings, taxonomy, ref }) {
   }
 
   const url = validateUrl(directImageUrl(imageUrl));
-  const srcset = url
-    ? `${srcVariant(url, 300, 300)} 300w, ${srcVariant(url, 600, 600)} 600w, ${srcVariant(url, 900, 900)} 900w`
-    : "";
   const price = formatNaira(p.price);
   const taxonomyCategory = taxonomyCategoryForProduct(p, taxonomy);
   const category = taxonomyCategory ? taxonomyCategory.name : String(p.category || "").trim() || "Custom";
@@ -93,13 +90,10 @@ export function ProductCard({ p, pid, settings, taxonomy, ref }) {
             }
           >
             {url ? (
-              <img
+              <SiteImage
                 src={url}
-                srcSet={srcset}
-                sizes="(min-width: 768px) 320px, 100vw"
                 alt={p.name}
-                loading="lazy"
-                decoding="async"
+                sizes="(min-width: 768px) 320px, 100vw"
                 onError={onImageError}
               />
             ) : null}

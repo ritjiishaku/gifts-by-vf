@@ -9,11 +9,168 @@ import {
   createSessionCookieValue,
   verifySessionCookieValue,
 } from "@/lib/auth";
-import { slugify } from "@/lib/format";
+import { slugify, directImageUrl, validateUrl, videoUrl, isSupabaseImage, isDriveUrl } from "@/lib/format";
 
 function internalError(message) {
   return { ok: false, error: message };
 }
+
+/* ── Image storage (Supabase Storage "images" bucket) ───────────────────────────────────────────── */
+
+const IMAGE_EXT = {
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/avif": "avif",
+};
+
+function extFromType(type) {
+  return IMAGE_EXT[String(type || "").toLowerCase()] || null;
+}
+
+function safeFolder(value) {
+  const clean = String(value || "products").toLowerCase().replace(/[^a-z0-9-]+/g, "-");
+  return clean || "products";
+}
+
+const STORAGE_MARKER = "/storage/v1/object/public/images/";
+
+// Upload one image file (from the admin ImageField) and return its public URL.
+export async function uploadImageAction(formData) {
+  if (!(await requireAdmin())) return { error: "Session expired. Log in again." };
+  const file = formData.get("file");
+  if (!file || typeof file === "string" || typeof file.arrayBuffer !== "function") {
+    return { error: "No image selected." };
+  }
+  if (!String(file.type || "").startsWith("image/")) {
+    return { error: "Please choose an image file (jpg, png, webp…)." };
+  }
+  if (file.size > 6 * 1024 * 1024) {
+    return { error: "Image is too large — please use one under 6 MB." };
+  }
+  const ext = extFromType(file.type) || "jpg";
+  const path = `${safeFolder(formData.get("folder"))}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  try {
+    const buffer = await file.arrayBuffer();
+    const { error } = await supabase()
+      .storage.from("images")
+      .upload(path, buffer, { contentType: file.type || "image/jpeg", upsert: false, cacheControl: "31536000" });
+    if (error) throw error;
+    const { data } = supabase().storage.from("images").getPublicUrl(path);
+    return { ok: true, url: data.publicUrl };
+  } catch (err) {
+    console.error("[admin] uploadImage:", err.message);
+    return {
+      error:
+        "Upload failed. Make sure the public 'images' bucket exists (run supabase/migrations/0005_image_storage.sql).",
+    };
+  }
+}
+
+// Best-effort removal of an image we own from the bucket (used on row delete).
+async function removeStorageImage(imageUrl) {
+  const url = String(imageUrl || "");
+  const idx = url.indexOf(STORAGE_MARKER);
+  if (idx === -1) return;
+  const path = url.slice(idx + STORAGE_MARKER.length).split("?")[0];
+  try {
+    await supabase().storage.from("images").remove([path]);
+  } catch (err) {
+    console.error("[admin] removeImage:", err.message);
+  }
+}
+
+function needsMigration(url) {
+  const raw = String(url || "").trim();
+  if (!raw) return false;
+  const direct = directImageUrl(raw);
+  if (!validateUrl(direct)) return false;
+  if (isSupabaseImage(direct)) return false;
+  // Skip video links that happen to live in image_url.
+  const looksLikeImage = /\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(direct) || isDriveUrl(raw) || !videoUrl(direct);
+  return looksLikeImage;
+}
+
+// Copy existing remote/Drive images into the bucket and repoint the rows at the
+// new public URLs. Runs in small batches (serverless time limits); the client
+// calls it repeatedly until nothing is left.
+export async function migrateImagesAction(prevState, formData) {
+  if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
+  const limit = Math.min(12, Math.max(1, Number(formData.get("limit")) || 6));
+
+  try {
+    const [{ data: prodRows }, { data: portRows }, { data: settingRows }] = await Promise.all([
+      supabase().from("products").select("id,image_url"),
+      supabase().from("portfolio").select("id,image_url"),
+      supabase().from("site_settings").select("key,value"),
+    ]);
+
+    const targets = [];
+    (prodRows || []).forEach((p) => {
+      if (needsMigration(p.image_url)) targets.push({ table: "products", id: p.id, url: p.image_url });
+    });
+    (portRows || []).forEach((p) => {
+      if (needsMigration(p.image_url)) targets.push({ table: "portfolio", id: p.id, url: p.image_url });
+    });
+    (settingRows || []).forEach((s) => {
+      if (/image_url$/i.test(s.key) && needsMigration(s.value)) {
+        targets.push({ table: "site_settings", id: s.key, url: s.value });
+      }
+    });
+
+    const total = targets.length;
+    const batch = targets.slice(0, limit);
+    let migrated = 0;
+    const errors = [];
+
+    for (const t of batch) {
+      try {
+        const direct = directImageUrl(t.url);
+        const res = await fetch(direct, { redirect: "follow" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const type = res.headers.get("content-type") || "image/jpeg";
+        if (!type.startsWith("image/")) throw new Error(`not an image (${type})`);
+        const buffer = await res.arrayBuffer();
+        if (buffer.byteLength > 8 * 1024 * 1024) throw new Error("larger than 8 MB");
+
+        const ext = extFromType(type) || "jpg";
+        const base = `migrated/${t.table}-${t.id}`.replace(/[^a-z0-9_-]+/gi, "-").toLowerCase();
+        const path = `${base}-${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase()
+          .storage.from("images")
+          .upload(path, buffer, { contentType: type, upsert: true, cacheControl: "31536000" });
+        if (upErr) throw upErr;
+
+        const { data } = supabase().storage.from("images").getPublicUrl(path);
+        const publicUrl = data.publicUrl;
+        const { error: updErr } =
+          t.table === "site_settings"
+            ? await supabase().from("site_settings").update({ value: publicUrl }).eq("key", t.id)
+            : await supabase().from(t.table).update({ image_url: publicUrl }).eq("id", t.id);
+        if (updErr) throw updErr;
+        migrated++;
+      } catch (err) {
+        errors.push(`${t.table} #${t.id}: ${err.message}`);
+      }
+    }
+
+    revalidatePath("/admin");
+    revalidatePath("/", "layout");
+    return {
+      ok: true,
+      migrated,
+      remaining: Math.max(0, total - migrated),
+      total,
+      errors: errors.slice(0, 6),
+    };
+  } catch (err) {
+    console.error("[admin] migrateImages:", err.message);
+    return internalError("Could not migrate images.");
+  }
+}
+
 
 function toBool(formData, key) {
   const v = String(formData.get(key) ?? "").trim();
@@ -166,8 +323,10 @@ export async function deleteProductAction(formData) {
   const id = Number(formData.get("id")) || 0;
   if (!id) return internalError("Missing product id.");
   try {
+    const { data: row } = await supabase().from("products").select("image_url").eq("id", id).maybeSingle();
     const { error } = await supabase().from("products").delete().eq("id", id);
     if (error) throw error;
+    if (row?.image_url) await removeStorageImage(row.image_url);
     revalidatePath("/admin");
     revalidatePath("/", "layout");
     return { ok: true };
@@ -393,8 +552,15 @@ async function deleteRow(table, formData) {
   const id = Number(formData.get("id")) || 0;
   if (!id) return internalError("Missing id.");
   try {
+    // Only portfolio rows carry a migrated image; fetch it first so we can tidy
+    // up the bucket after the row is gone.
+    const { data: row } =
+      table === "portfolio"
+        ? await supabase().from(table).select("image_url").eq("id", id).maybeSingle()
+        : { data: null };
     const { error } = await supabase().from(table).delete().eq("id", id);
     if (error) throw error;
+    if (row?.image_url) await removeStorageImage(row.image_url);
     revalidatePath("/admin");
     revalidatePath("/", "layout");
     return { ok: true };

@@ -41,12 +41,23 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  let supabaseOrigin = "";
+  try {
+    supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : "";
+  } catch {
+    supabaseOrigin = "";
+  }
+
   return (
     <html lang="en-NG">
       <head>
         <meta name="theme-color" content="#c9a96e" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Warm up the image hosts so the first photo doesn't pay DNS+TLS first. */}
+        {supabaseOrigin ? <link rel="preconnect" href={supabaseOrigin} crossOrigin="anonymous" /> : null}
+        <link rel="preconnect" href="https://lh3.googleusercontent.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap"

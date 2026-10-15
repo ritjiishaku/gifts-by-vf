@@ -1,7 +1,8 @@
 "use client";
 
-import { validateUrl, directImageUrl, srcVariant } from "@/lib/format";
+import { validateUrl, directImageUrl } from "@/lib/format";
 import { openLightbox } from "./Lightbox";
+import { SiteImage } from "./SiteImage";
 import { Icon } from "./icons";
 
 export function Portfolio({ label, title, rows }) {
@@ -35,17 +36,16 @@ export function Portfolio({ label, title, rows }) {
                       aria-label={`View ${labelText}`}
                       onClick={() => openLightbox({ url, name: labelText })}
                     >
-                      <img
+                      <SiteImage
                         src={url}
-                        srcSet={`${srcVariant(url, 480, 360)} 480w, ${srcVariant(url, 960, 720)} 960w`}
-                        sizes="(min-width: 768px) 360px, 100vw"
                         alt={labelText}
-                        loading="lazy"
-                        decoding="async"
+                        sizes="(min-width: 768px) 360px, 100vw"
+                        legacyWidths={[480, 960]}
                         onError={(e) => {
                           const img = e.currentTarget;
                           if (!img.dataset.retried) {
                             img.dataset.retried = "true";
+                            img.removeAttribute("srcset");
                             img.src = url;
                           } else {
                             img.closest(".portfolio-item")?.classList.add("no-image");
