@@ -4,6 +4,7 @@ import { useState, useActionState } from "react";
 import { saveProductAction } from "../actions";
 import { IconPicker } from "./IconPicker";
 import { ImageField } from "./ImageField";
+import { AdminThumb } from "./AdminThumb";
 import { useAdminForm } from "./useAdminForm";
 
 export function AdminProductForm({ product, onClose }) {
@@ -155,7 +156,7 @@ export function AdminProductForm({ product, onClose }) {
             <div className="admin-dup-list">
               {(duplicate.existing || []).map((row) => (
                 <span key={row.id} className="admin-dup-item">
-                  {row.image_url ? <img src={row.image_url} alt="" loading="lazy" /> : null}
+                  {row.image_url ? <AdminThumb url={row.image_url} /> : null}
                   {row.name}
                 </span>
               ))}

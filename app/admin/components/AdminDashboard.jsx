@@ -28,6 +28,7 @@ import { AdminFaqForm } from "./AdminFaqForm";
 import { ContentRowsPanel } from "./ContentRowsPanel";
 import { ImageField } from "./ImageField";
 import { MigrateImages } from "./MigrateImages";
+import { AdminThumb } from "./AdminThumb";
 
 const PRODUCT_SEARCH_KEYS = ["name", "category", "subcategory", "product_type", "material", "occasion", "slug", "size"];
 const TESTIMONIAL_SEARCH_KEYS = ["name", "source", "quote"];
@@ -199,11 +200,10 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
             {filtered.map((p) => (
               <div key={p.id} className="admin-row">
                 <div className="admin-row-thumb">
-                  {p.image_url ? (
-                    <img src={p.image_url} alt="" loading="lazy" />
-                  ) : (
-                    String(p.name || "?").charAt(0).toUpperCase()
-                  )}
+                  <AdminThumb
+                    url={p.image_url}
+                    fallback={String(p.name || "?").charAt(0).toUpperCase()}
+                  />
                 </div>
                 <div className="admin-row-info">
                   <h4>{p.name}</h4>
@@ -453,13 +453,12 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
           onSortChange={(v) => setSorts((prev) => ({ ...prev, portfolio: v }))}
           vis={visModes.portfolio || "all"}
           onVisChange={(v) => setVisModes((prev) => ({ ...prev, portfolio: v }))}
-          renderThumb={(row) =>
-            row.image_url ? (
-              <img src={row.image_url} alt="" loading="lazy" />
-            ) : (
-              String(row.caption || "P").charAt(0).toUpperCase()
-            )
-          }
+          renderThumb={(row) => (
+            <AdminThumb
+              url={row.image_url}
+              fallback={String(row.caption || "P").charAt(0).toUpperCase()}
+            />
+          )}
           renderInfo={(row) => (
             <>
               <h4>{row.caption || "Untitled piece"}</h4>
