@@ -171,6 +171,39 @@ export async function migrateImagesAction(prevState, formData) {
   }
 }
 
+// Health check used by the admin Settings panel so a missing bucket or a
+// missing service-role key shows an explicit message instead of a silent
+// upload failure.
+export async function checkImageStorageAction() {
+  if (!(await requireAdmin())) return { ok: false, error: "Session expired. Log in again." };
+
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return {
+      ok: false,
+      error:
+        "Supabase is not configured on the server. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY, then redeploy.",
+    };
+  }
+
+  try {
+    const { data, error } = await supabase().storage.getBucket("images");
+    if (error || !data) {
+      return {
+        ok: false,
+        error:
+          "The 'images' storage bucket was not found. Run supabase/migrations/0005_image_storage.sql in your Supabase project.",
+      };
+    }
+    return { ok: true, public: data.public === true };
+  } catch (err) {
+    console.error("[admin] checkImageStorage:", err.message);
+    return {
+      ok: false,
+      error: "Could not reach Supabase Storage. Check the Supabase URL and service-role key, then try again.",
+    };
+  }
+}
+
 
 function toBool(formData, key) {
   const v = String(formData.get(key) ?? "").trim();

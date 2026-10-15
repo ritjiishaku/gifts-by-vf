@@ -3072,6 +3072,44 @@ body.lightbox-open { overflow: hidden; }
 .admin-migrate > div { flex: 1 1 300px; min-width: 0; }
 .admin-migrate h4 { margin: 0 0 4px; color: var(--dark); font-size: 0.95rem; }
 .admin-migrate .admin-intro { margin: 0; }
+.admin-migrate .admin-saved,
+.admin-migrate .rep-error { margin: 8px 0 0; }
+.admin-storage-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+.admin-storage-status-warn { color: #8a5a00; font-size: 0.8rem; }
+.admin-storage-dot {
+    flex: 0 0 auto;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--text-light);
+}
+.admin-storage-dot.is-checking { background: #b9b2a6; animation: admin-storage-pulse 1s ease-in-out infinite; }
+.admin-storage-dot.is-ready { background: #2f8f46; }
+.admin-storage-dot.is-warn { background: #d68910; }
+.admin-storage-dot.is-error { background: #c0392b; }
+@keyframes admin-storage-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+.admin-storage-recheck {
+    background: none;
+    border: 0;
+    padding: 0;
+    margin-left: 4px;
+    font: inherit;
+    font-size: 0.78rem;
+    color: var(--text);
+    text-decoration: underline;
+    cursor: pointer;
+}
+.admin-storage-recheck:hover { color: var(--gold); }
+.admin-storage-recheck:disabled { opacity: 0.5; cursor: default; }
 .admin-settings-advanced {
     margin-top: 26px;
     padding-top: 20px;
