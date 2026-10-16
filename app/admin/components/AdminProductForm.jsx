@@ -155,6 +155,10 @@ export function AdminProductForm({ product, onClose }) {
 
         {duplicate ? (
           <div className="admin-warning" role="alert">
+            {/* Belt-and-suspenders: guarantee `force` is submitted with the
+                form while the duplicate warning is shown, independent of how
+                the browser/React handles a submit button's name+value. */}
+            <input type="hidden" name="force" value="true" />
             <p className="admin-warning-title">
               ⚠ A product with this name already exists in this category.
             </p>
