@@ -16,6 +16,8 @@ export function AdminProductForm({ product, onClose }) {
     state,
     pending,
     onClose,
+    // Keep the modal open when the slug was auto-suffixed so the notice is readable.
+    autoClose: !state?.slugNotice,
   });
 
   const duplicate = state?.duplicate && !dismissedDuplicate ? state : null;
@@ -59,7 +61,7 @@ export function AdminProductForm({ product, onClose }) {
           </label>
           <label className="admin-field">
             Slug
-            <input name="slug" defaultValue={values?.slug ?? product.slug ?? ""} placeholder="Leave blank to auto-fill from the name" />
+            <input name="slug" defaultValue={state?.slug ?? values?.slug ?? product.slug ?? ""} placeholder="Leave blank to auto-fill from the name" />
           </label>
           <label className="admin-field">
             Price (display text)
@@ -194,6 +196,7 @@ export function AdminProductForm({ product, onClose }) {
             {pending ? "Saving…" : isNew ? "Create product" : "Save changes"}
           </button>
           {justSaved ? <p className="admin-saved">✓ Saved</p> : null}
+          {state?.slugNotice ? <p className="admin-field-hint">{state.slugNotice}</p> : null}
           {state?.error && !duplicate ? <p className="rep-error">{state.error}</p> : null}
         </div>
       </form>

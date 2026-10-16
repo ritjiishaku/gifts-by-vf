@@ -218,26 +218,33 @@ function isUniqueViolation(error) {
   return /duplicate key value|unique constraint/i.test(String(error.message || ""));
 }
 
-// Find a slug that no product is using yet (used for forced duplicate creates).
-async function uniqueSlugForCreate(base) {
-  const root = base || "product";
-  let candidate = root;
-  for (let i = 0; i < 25; i++) {
-    try {
-      const { data, error } = await supabase()
-        .from("products")
-        .select("id")
-        .eq("slug", candidate)
-        .limit(1);
-      if (error) return root; // best effort — fall back to original
-      if (!data || data.length === 0) return candidate;
-    } catch (err) {
-      console.error("[admin] uniqueSlug:", err.message);
-      return root;
+const SLUG_MAX = 60; // matches the slugify() cap
+
+// Deterministically find a slug no other product is using (`foo`, `foo-2`,
+// `foo-3`, …). `excludeId` lets an edit keep its own slug.
+async function uniqueSlug(base, excludeId = null) {
+  const root = slugify(base) || "product";
+  try {
+    // Catalogue is small (the duplicate-name guard already does a full scan).
+    const { data, error } = await supabase().from("products").select("id,slug");
+    if (error) throw error;
+    const taken = new Set(
+      (data || [])
+        .filter((r) => excludeId == null || Number(r.id) !== Number(excludeId))
+        .map((r) => String(r.slug || "").trim())
+        .filter(Boolean)
+    );
+    if (!taken.has(root)) return root;
+    for (let n = 2; n < 100; n++) {
+      const suffix = `-${n}`;
+      const stem = root.slice(0, SLUG_MAX - suffix.length).replace(/-+$/, "");
+      const candidate = `${stem}${suffix}` || `product${suffix}`;
+      if (!taken.has(candidate)) return candidate;
     }
-    candidate = `${root}-${Date.now().toString(36).slice(-5)}${i}`;
+  } catch (err) {
+    console.error("[admin] uniqueSlug:", err.message);
   }
-  return candidate;
+  return root; // best effort — insert/update retry below covers the race
 }
 
 async function requireAdmin() {
@@ -335,15 +342,12 @@ export async function saveProductAction(prevState, formData) {
     }
   }
 
-  const isForce = formData.get("force") === "true";
-  let slug = raw.slug || slugify(raw.name);
-
-  // "Save anyway" (forced create): a duplicate name auto-derives the same slug
-  // as the existing product, which the unique constraint rejects. Pick a slug
-  // that's free before inserting so the duplicate always saves.
-  if (isForce && !id) {
-    slug = await uniqueSlugForCreate(slug);
-  }
+  // Normalize first so the notice only fires on a real collision (slugify is
+  // idempotent — a free, well-formed slug comes back unchanged).
+  const requestedSlug = slugify(raw.slug || raw.name) || "product";
+  // Uniquify on every save (create AND edit) so a name/slug that normalizes to
+  // an existing slug is silently suffixed instead of erroring.
+  let slug = await uniqueSlug(requestedSlug, id || null);
 
   const payload = {
     name: raw.name,
@@ -371,36 +375,29 @@ export async function saveProductAction(prevState, formData) {
   };
 
   try {
+    // Write with the pre-checked slug, then retry on a 23505 race: re-run
+    // uniqueSlug (it re-reads the table, so the slug that appeared since the
+    // first pass is now seen) and retry up to 3 times — creates and updates
+    // alike, force or not.
     let error;
-    if (id > 0) {
-      ({ error } = await supabase()
-        .from("products")
-        .update(payload)
-        .eq("id", id));
-    } else {
-      ({ error } = await supabase()
-        .from("products")
-        .insert(payload));
+    let retries = 0;
+    for (;;) {
+      if (id > 0) {
+        ({ error } = await supabase()
+          .from("products")
+          .update(payload)
+          .eq("id", id));
+      } else {
+        ({ error } = await supabase()
+          .from("products")
+          .insert(payload));
+      }
+      if (!isUniqueViolation(error) || retries >= 3) break;
+      retries += 1;
+      payload.slug = await uniqueSlug(payload.slug, id || null);
+      slug = payload.slug;
     }
     if (error) {
-      // Forced duplicate create: if the slug still collided (race, or the
-      // pre-check fell back), retry once with a guaranteed-free slug so the
-      // admin's override always saves.
-      if (isUniqueViolation(error) && isForce && !id) {
-        payload.slug = await uniqueSlugForCreate(`${slug}-${Date.now().toString(36).slice(-5)}`);
-        const { error: retryError } = await supabase().from("products").insert(payload);
-        if (!retryError) {
-          revalidatePath("/admin");
-          revalidatePath("/", "layout");
-          return { ok: true };
-        }
-        return {
-          ok: false,
-          attempt: (prevState?.attempt || 0) + 1,
-          values: raw,
-          error: "Could not save this duplicate — please pick a different slug.",
-        };
-      }
       if (isUniqueViolation(error)) {
         return {
           ok: false,
@@ -413,7 +410,13 @@ export async function saveProductAction(prevState, formData) {
     }
     revalidatePath("/admin");
     revalidatePath("/", "layout");
-    return { ok: true };
+    return {
+      ok: true,
+      slug,
+      slugNotice: slug !== requestedSlug
+        ? `“${requestedSlug}” was already used, so this product was saved as “${slug}”.`
+        : null,
+    };
   } catch (err) {
     console.error("[admin] saveProduct:", err.message);
     return {

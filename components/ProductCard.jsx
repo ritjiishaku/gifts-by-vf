@@ -41,7 +41,7 @@ export function ProductCard({ p, pid, settings, taxonomy, ref }) {
   const taxonomyCategory = taxonomyCategoryForProduct(p, taxonomy);
   const category = taxonomyCategory ? taxonomyCategory.name : String(p.category || "").trim() || "Custom";
   const productType = taxonomyProductTypeForProduct(p, taxonomy);
-  const slug = slugify(p.name) || slugify(pid);
+  const slug = String(p.slug || "").trim() || slugify(p.name) || slugify(pid);
   const soldOut = isSoldOut(p);
   const badgeLabel = soldOut ? String(p.stock_label || "").trim() || "Sold Out" : category;
   const orderText = soldOut ? "Request a custom quote" : "Order this gift";

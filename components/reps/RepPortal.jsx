@@ -712,7 +712,8 @@ export function RepPortal({ products, commissionRule }) {
               <p className="rep-empty">No products match your filters.</p>
             ) : (
               filteredProducts.map((p, i) => {
-                const pid = slugify(p.name) || String(p.display_order || i + 1);
+                const pid =
+                  String(p.slug || "").trim() || slugify(p.name) || String(p.display_order || i + 1);
                 const link = shareLink(pid);
                 const price = priceNumber(p) != null ? formatNaira(p.price) : "";
                 const commission = estimatedCommission(p);

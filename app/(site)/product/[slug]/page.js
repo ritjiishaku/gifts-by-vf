@@ -14,7 +14,6 @@ import {
   formatNaira,
   priceNumber,
   filterAndSort,
-  slugify,
   isFeatured,
   serializeJsonLd,
   ogImage,
@@ -49,12 +48,12 @@ export async function generateMetadata({ params }) {
   return {
     title,
     description,
-    alternates: { canonical: `/product/${slug}` },
+    alternates: { canonical: `/product/${resolvedSlug}` },
     openGraph: {
       title,
       description,
       type: "website",
-      url: `/product/${slug}`,
+      url: `/product/${resolvedSlug}`,
       images: ogImages,
     },
     twitter: {
@@ -88,13 +87,14 @@ export default async function ProductPage({ params }) {
   const waHref = waLink(settings, waMessage);
   const soldOutWaHref = waLink(settings, `Hello! I'd like to enquire about ${product.name} as a custom order.`);
 
+  const resolvedSlug = product.slug || slug;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
     description: product.description || undefined,
     image: image ? [image] : undefined,
-    url: `${SITE_URL}/product/${encodeURIComponent(slugify(product.name))}`,
+    url: `${SITE_URL}/product/${encodeURIComponent(resolvedSlug)}`,
     brand: { "@type": "Brand", name: "Gifts by VF" },
     category: category || undefined,
   };
@@ -216,7 +216,7 @@ export default async function ProductPage({ params }) {
                   <WaIcon />
                   <span>{soldOut ? "Request a custom quote" : "Order this gift"}</span>
                 </a>
-                <CopyLinkButton slug={slugify(product.name)} name={product.name} />
+                <CopyLinkButton slug={resolvedSlug} name={product.name} />
               </div>
             </div>
           </div>

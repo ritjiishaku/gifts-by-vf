@@ -80,7 +80,7 @@ export default async function HomePage() {
     "@type": "ItemList",
     itemListElement: products.slice(0, 100).map((p, index) => {
       const img = validateUrl(directImageUrl(p.image_url));
-      const item = { "@type": "Product", name: p.name, url: `${SITE_URL}/product/${encodeURIComponent(slugify(p.name))}` };
+      const item = { "@type": "Product", name: p.name, url: `${SITE_URL}/product/${encodeURIComponent(p.slug || slugify(p.name))}` };
       if (p.description) item.description = p.description;
       if (img) item.image = [img];
       const price = priceNumber(p);

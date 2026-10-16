@@ -136,7 +136,9 @@ export function Catalogue({ products, taxonomy, settings }) {
     const params = new URLSearchParams(window.location.search);
     const p = params.get("p");
     if (!p) return;
-    const target = allProducts.find((product) => slugify(product.name) === slugify(p));
+    const target = allProducts.find(
+      (product) => product.slug === slugify(p) || slugify(product.name) === slugify(p)
+    );
     if (!target) return;
     clearFilters();
     const category = taxonomyCategoryForProduct(target, taxonomy);
@@ -156,7 +158,7 @@ export function Catalogue({ products, taxonomy, settings }) {
       }));
     }
     setTimeout(() => {
-      const el = document.getElementById(`product-${slugify(slugify(p))}`);
+      const el = document.getElementById(`product-${target.slug || slugify(target.name)}`);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
         el.classList.add("highlighted");
@@ -223,7 +225,7 @@ export function Catalogue({ products, taxonomy, settings }) {
 
   const renderCard = (product, pid) => (
     <ProductCard
-      key={`${slugify(product.name)}-${pid}`}
+      key={product.id}
       p={product}
       pid={pid}
       settings={settings}
