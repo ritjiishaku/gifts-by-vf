@@ -19,9 +19,9 @@ export function AdminProductForm({ product, onClose }) {
   });
 
   const duplicate = state?.duplicate && !dismissedDuplicate ? state : null;
-  // Values echoed back by a blocked (duplicate) save. React 19 resets the
-  // form's uncontrolled fields when the action resolves, so we repopulate them
-  // (and remount the form via `attempt`) to keep what the admin entered.
+  // Values echoed back by a blocked or failed save. React 19 resets the form's
+  // uncontrolled fields when the action resolves, so we repopulate them (and
+  // remount the form via `attempt`) to keep what the admin entered.
   const values = state?.values || null;
 
   return (

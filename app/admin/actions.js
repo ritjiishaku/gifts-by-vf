@@ -210,6 +210,36 @@ function toBool(formData, key) {
   return v === "true" || v === "1" || v === "yes" || v === "on";
 }
 
+// Postgres unique-violation. Supabase reports code 23505, but some paths only
+// surface the message, so match both to be safe.
+function isUniqueViolation(error) {
+  if (!error) return false;
+  if (error.code === "23505") return true;
+  return /duplicate key value|unique constraint/i.test(String(error.message || ""));
+}
+
+// Find a slug that no product is using yet (used for forced duplicate creates).
+async function uniqueSlugForCreate(base) {
+  const root = base || "product";
+  let candidate = root;
+  for (let i = 0; i < 25; i++) {
+    try {
+      const { data, error } = await supabase()
+        .from("products")
+        .select("id")
+        .eq("slug", candidate)
+        .limit(1);
+      if (error) return root; // best effort — fall back to original
+      if (!data || data.length === 0) return candidate;
+    } catch (err) {
+      console.error("[admin] uniqueSlug:", err.message);
+      return root;
+    }
+    candidate = `${root}-${Date.now().toString(36).slice(-5)}${i}`;
+  }
+  return candidate;
+}
+
 async function requireAdmin() {
   const cookieStore = await cookies();
   return verifySessionCookieValue(cookieStore.get(SESSION_COOKIE)?.value);
@@ -305,9 +335,19 @@ export async function saveProductAction(prevState, formData) {
     }
   }
 
+  const isForce = formData.get("force") === "true";
+  let slug = raw.slug || slugify(raw.name);
+
+  // "Save anyway" (forced create): a duplicate name auto-derives the same slug
+  // as the existing product, which the unique constraint rejects. Pick a slug
+  // that's free before inserting so the duplicate always saves.
+  if (isForce && !id) {
+    slug = await uniqueSlugForCreate(slug);
+  }
+
   const payload = {
     name: raw.name,
-    slug: raw.slug || slugify(raw.name),
+    slug: slug,
     description: raw.description || null,
     image_url: raw.image_url || null,
     video_url: raw.video_url || null,
@@ -343,8 +383,31 @@ export async function saveProductAction(prevState, formData) {
         .insert(payload));
     }
     if (error) {
-      if (error.code === "23505") {
-        return internalError("A product with this slug already exists. Please choose a different slug or name.");
+      // Forced duplicate create: if the slug still collided (race, or the
+      // pre-check fell back), retry once with a guaranteed-free slug so the
+      // admin's override always saves.
+      if (isUniqueViolation(error) && isForce && !id) {
+        payload.slug = await uniqueSlugForCreate(`${slug}-${Date.now().toString(36).slice(-5)}`);
+        const { error: retryError } = await supabase().from("products").insert(payload);
+        if (!retryError) {
+          revalidatePath("/admin");
+          revalidatePath("/", "layout");
+          return { ok: true };
+        }
+        return {
+          ok: false,
+          attempt: (prevState?.attempt || 0) + 1,
+          values: raw,
+          error: "Could not save this duplicate — please pick a different slug.",
+        };
+      }
+      if (isUniqueViolation(error)) {
+        return {
+          ok: false,
+          attempt: (prevState?.attempt || 0) + 1,
+          values: raw,
+          error: "A product with this slug already exists. Please choose a different slug or name.",
+        };
       }
       throw error;
     }
@@ -353,7 +416,12 @@ export async function saveProductAction(prevState, formData) {
     return { ok: true };
   } catch (err) {
     console.error("[admin] saveProduct:", err.message);
-    return internalError("Could not save the product.");
+    return {
+      ok: false,
+      attempt: (prevState?.attempt || 0) + 1,
+      values: raw,
+      error: "Could not save the product.",
+    };
   }
 }
 
