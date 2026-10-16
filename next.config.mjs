@@ -11,6 +11,20 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "8mb",
+    },
+    // Admin image uploads go through a Server Action (uploadImageAction), which
+    // streams the file in the request body. Next.js rejects any Server Action
+    // body over 1 MB by default with a framework-level error, so the client only
+    // ever saw its generic "Upload failed. Please try again." message — the
+    // action itself never ran. Allow up to 8 MB (the action's own guard caps
+    // images at 6 MB) so normal photo uploads reach Supabase Storage.
+    serverActions: {
+      bodySizeLimit: "8mb",
+    },
+  },
   images: {
     // next/image is used for Supabase-hosted images (automatic resize + WebP/AVIF).
     // Google Drive hosts stay listed for any not-yet-migrated images. Any other

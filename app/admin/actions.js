@@ -61,10 +61,18 @@ export async function uploadImageAction(formData) {
     const { data } = supabase().storage.from("images").getPublicUrl(path);
     return { ok: true, url: data.publicUrl };
   } catch (err) {
-    console.error("[admin] uploadImage:", err.message);
+    console.error("[admin] uploadImage:", err);
+    const msg =
+      err?.message ||
+      err?.error_description ||
+      err?.error ||
+      err?.details ||
+      String(err || "");
+    const code = err?.statusCode || err?.status || err?.code;
     return {
-      error:
-        "Upload failed. Make sure the public 'images' bucket exists (run supabase/migrations/0005_image_storage.sql).",
+      error: msg
+        ? `Upload failed: ${msg}${code ? ` (${code})` : ""}`
+        : "Upload failed. Make sure the public 'images' bucket exists (run supabase/migrations/0005_image_storage.sql).",
     };
   }
 }

@@ -59,8 +59,19 @@ export function ImageField({
       const res = await uploadImageAction(fd);
       if (res?.error) setError(res.error);
       else if (res?.url) setUrl(res.url);
-    } catch {
-      setError("Upload failed. Please try again.");
+    } catch (err) {
+      // A thrown error here means the Server Action request never produced a
+      // result — e.g. the file exceeded the Server Action body limit, the
+      // session expired, or the request was dropped. Surface the underlying
+      // message so failures are diagnosable instead of the bare generic text.
+      const msg = String(err?.message || "");
+      if (/too large|body exceeded|413|payload/i.test(msg)) {
+        setError("That image is too large to upload. Please use a smaller file (under 6 MB).");
+      } else if (msg) {
+        setError(`Upload failed: ${msg}`);
+      } else {
+        setError("Upload failed. Please try again.");
+      }
     } finally {
       setBusy(false);
     }
