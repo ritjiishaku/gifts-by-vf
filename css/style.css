@@ -2100,10 +2100,22 @@ body {
 .rep-empty { color: var(--text-light); font-style: italic; font-size: 0.9rem; }
 
 /* ── ADMIN PAGE ── */
-.admin-page { padding-bottom: 40px; }
-.admin-section { max-width: 900px; margin: 0 auto; padding: 36px 24px 60px; }
-.admin-hero {
-    padding-top: 72px;
+.admin-page { padding: 24px 0 40px; }
+.admin-section { max-width: 900px; margin: 0 auto; padding: 32px 24px 60px; }
+
+/* Compact admin bar (replaces the old marketing hero + "Dashboard" heading). */
+.admin-topbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.admin-section .admin-topbar-title {
+    margin: 0;
+    font-size: 1.35rem;
+    color: var(--dark);
 }
 .admin-lock-btn {
     appearance: none;
@@ -2508,13 +2520,30 @@ body.lightbox-open { overflow: hidden; }
     margin-bottom: 22px;
 }
 .admin-toolbar-end { justify-content: flex-end; }
+
+/* Sticky admin bar. Title on the left; on desktop Sign out sits on the right,
+   and on <=640px a hamburger takes that spot and opens the sections + Sign out. */
+.admin-sticky {
+    position: sticky;
+    top: 76px; /* clears the sticky .rep-header (see html scroll-padding-top) */
+    z-index: 90;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-light);
+    background: rgba(255, 255, 255, 0.96); /* opaque so rows don't show through while pinned */
+    backdrop-filter: blur(10px);
+}
+.admin-nav-toggle { display: none; } /* desktop shows the tab strip instead */
+.admin-topbar-signout { flex: 0 0 auto; }
+.admin-nav-menu { display: flex; }
+.admin-nav-signout { display: none; } /* mobile-only, inside the dropdown */
+
 .admin-tabs {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 24px;
-    border-bottom: 1px solid var(--border-light);
-    padding-bottom: 14px;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 .admin-tab {
     min-height: 42px;
@@ -2535,6 +2564,21 @@ body.lightbox-open { overflow: hidden; }
     background: var(--gold);
     border-color: var(--gold);
     color: #fff;
+}
+/* On small screens keep the tab strip to a single scrollable row so it doesn't
+   eat vertical space (and stays compact while pinned). */
+@media (max-width: 720px) {
+    .admin-topbar { margin-bottom: 16px; }
+    .admin-section { padding: 24px 16px 48px; }
+    .admin-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x proximity;
+    }
+    .admin-tabs::-webkit-scrollbar { display: none; }
+    .admin-tab { flex: 0 0 auto; scroll-snap-align: start; }
 }
 .admin-search {
     flex: 1 1 220px;
@@ -2564,6 +2608,7 @@ body.lightbox-open { overflow: hidden; }
     font-size: 0.8rem;
     font-weight: 600;
     letter-spacing: 0.5px;
+    text-decoration: none;
     cursor: pointer;
     transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
@@ -3125,3 +3170,141 @@ body.lightbox-open { overflow: hidden; }
     cursor: pointer;
 }
 .admin-settings-advanced > summary:hover { color: var(--gold); }
+
+/* ── ADMIN — MOBILE LAYOUT (<=640px) ───────────────────────────────────────
+   Thumb-friendly admin: stacked toolbars, card-style rows with full-width
+   actions, and a full-screen modal with a pinned header + save bar. Placed at
+   the end so it overrides the base .admin-row / .admin-modal rules above. */
+@media (max-width: 640px) {
+    .admin-page { padding: 16px 0 32px; }
+    .admin-section { padding: 20px 16px 40px; }
+
+    /* Top bar: title on the left, hamburger in the top-right slot where the
+       desktop Sign out button sits. The whole bar stays pinned. */
+    .admin-section .admin-topbar-title { font-size: 1.15rem; }
+    .admin-sticky { top: 56px; padding-bottom: 8px; }
+    .admin-topbar { flex-wrap: nowrap; gap: 10px; margin-bottom: 0; }
+    .admin-topbar-signout { display: none; }
+
+    .admin-nav-toggle {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: 8px;
+        min-height: 40px;
+        padding: 8px 12px;
+        border: 1px solid var(--border-light);
+        border-radius: 10px;
+        background: #fff;
+        color: var(--dark);
+        font: inherit;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        touch-action: manipulation; /* stop double-tap-zoom from eating the tap */
+        -webkit-tap-highlight-color: transparent;
+    }
+    .admin-nav-burger { display: inline-flex; flex-direction: column; gap: 3px; width: 16px; }
+    .admin-nav-burger span { height: 2px; border-radius: 2px; background: currentColor; }
+    .admin-nav-chevron { font-size: 0.7rem; color: var(--text-light); transition: transform 0.2s; }
+    .admin-nav-toggle[aria-expanded="true"] .admin-nav-chevron { transform: rotate(180deg); }
+
+    .admin-nav-menu {
+        display: none;
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        z-index: 95;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        margin: 0;
+        padding: 10px;
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    .admin-nav-menu-open { display: flex; }
+    .admin-nav-menu .admin-tabs {
+        flex: 0 0 auto;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        gap: 4px;
+        overflow: visible;
+    }
+    .admin-nav-menu .admin-tab {
+        display: flex;
+        flex: 1 1 auto;
+        align-items: center;
+        justify-content: flex-start;
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 12px;
+        text-align: left;
+        border-radius: 8px;
+        font-size: 0.82rem;
+    }
+    .admin-nav-signout {
+        display: block;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-light);
+    }
+    .admin-nav-signout .admin-btn { width: 100%; }
+    /* Toolbars: stack full-width */
+    .admin-toolbar { flex-direction: column; align-items: stretch; gap: 10px; margin-bottom: 18px; }
+    .admin-list-filters { width: 100%; gap: 8px; }
+    .admin-search,
+    .admin-list-filters .admin-search { max-width: none; width: 100%; flex: 1 1 100%; }
+    .admin-list-filters .admin-filter { flex: 1 1 0; min-width: 0; }
+    .admin-toolbar > .admin-btn,
+    .admin-toolbar-end,
+    .admin-toolbar-end .admin-btn { width: 100%; }
+
+    /* Card-style rows: [thumb][info] / tags / full-width actions */
+    .admin-row { gap: 10px 12px; padding: 14px; }
+    .admin-row-info { flex: 1 1 auto; }
+    .admin-row-info p { white-space: normal; }
+    .admin-row-quote { -webkit-line-clamp: 3; }
+    .admin-tags { width: 100%; }
+    .admin-actions { width: 100%; margin-left: 0; gap: 10px; }
+    .admin-actions > * { flex: 1 1 0; min-width: 0; }
+    .admin-actions .admin-btn { width: 100%; }
+
+    /* Full-screen modal with a pinned header and save bar */
+    .admin-modal { padding: 0; }
+    .admin-modal-panel {
+        margin: 0;
+        min-height: 100%;
+        max-width: none;
+        border-radius: 0;
+        padding: 0 16px 24px;
+    }
+    .admin-modal-panel-narrow { max-width: none; }
+    .admin-modal-head {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        margin: 0 -16px;
+        padding: 14px 16px;
+        background: #fff;
+        border-bottom: 1px solid var(--border-light);
+    }
+    .admin-modal-head h2 { font-size: 1.15rem; }
+    .admin-form-grid { margin-top: 16px; }
+    .admin-checks { gap: 10px; }
+    .admin-check { flex: 1 1 auto; justify-content: center; }
+    .admin-form-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        margin: 18px -16px -24px;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+        background: #fff;
+        border-top: 1px solid var(--border-light);
+    }
+    .admin-form-actions .admin-btn { flex: 1 1 auto; }
+}

@@ -284,9 +284,15 @@ export async function saveProductAction(prevState, formData) {
         (p) => `${slugify(p.name || "")}::${slugify(p.category || "")}` === key
       );
       if (existing.length > 0) {
+        // React 19 resets uncontrolled fields when a form action resolves — even
+        // for a blocked save like this. Echo the submitted values back (and a
+        // fresh attempt token so the form remounts cleanly) so the admin keeps
+        // everything they typed and "Save anyway" resubmits it intact.
         return {
           ok: false,
           duplicate: true,
+          attempt: (prevState?.attempt || 0) + 1,
+          values: raw,
           error: `A product named "${raw.name}" already exists${
             raw.category ? ` in "${raw.category}"` : ""
           }. Save anyway if it is a different piece.`,

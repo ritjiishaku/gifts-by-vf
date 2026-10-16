@@ -25,29 +25,15 @@ export default async function AdminPage() {
     ]);
 
   return (
-    <>
-      <section className="page-hero admin-hero">
-        <div className="page-hero-copy">
-          <p className="section-label">Owner area</p>
-          <h1>Manage your gift catalogue</h1>
-          <p>Update products, reps and site content from one polished admin area.</p>
-        </div>
-        <div className="gift-chips" aria-label="Admin focus areas">
-          <span>Settings</span>
-          <span>Products</span>
-          <span>Reps</span>
-        </div>
-      </section>
-      <AdminDashboard
-        settings={settings}
-        products={products}
-        reps={reps}
-        testimonials={testimonials}
-        portfolio={portfolio}
-        whyUs={whyUs}
-        howTo={howTo}
-        faqs={faqs}
-      />
-    </>
+    <AdminDashboard
+      settings={settings}
+      products={products}
+      reps={reps}
+      testimonials={testimonials}
+      portfolio={portfolio}
+      whyUs={whyUs}
+      howTo={howTo}
+      faqs={faqs}
+    />
   );
 }

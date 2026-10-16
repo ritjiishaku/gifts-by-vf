@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useActionState } from "react";
+import { useEffect, useMemo, useRef, useState, useActionState } from "react";
 import {
   logoutAction,
   deleteProductAction,
@@ -34,8 +34,23 @@ const PRODUCT_SEARCH_KEYS = ["name", "category", "subcategory", "product_type", 
 const TESTIMONIAL_SEARCH_KEYS = ["name", "source", "quote"];
 const REP_SEARCH_KEYS = ["name", "rep_id"];
 
+// Admin sections, in order. Used for the tab strip and the compact top-bar title.
+const TABS = [
+  ["settings", "Settings"],
+  ["products", "Products"],
+  ["reps", "Sales reps"],
+  ["testimonials", "Testimonials"],
+  ["portfolio", "Portfolio"],
+  ["whyUs", "Why us"],
+  ["howTo", "How to order"],
+  ["faqs", "FAQ"],
+];
+
 export function AdminDashboard({ settings, products, reps, testimonials, whyUs, portfolio, howTo, faqs }) {
   const [tab, setTab] = useState("settings");
+  // On narrow screens the section tabs collapse into a hamburger dropdown.
+  const [navOpen, setNavOpen] = useState(false);
+  const navRef = useRef(null);
   // Search / sort / filter state is kept PER TAB and survives tab switches.
   const [queries, setQueries] = useState({});
   const [sorts, setSorts] = useState({});
@@ -55,6 +70,23 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
   const setSort = (value) => setSorts((prev) => ({ ...prev, [tab]: value }));
   const vis = visModes[tab] || "all";
   const setVis = (value) => setVisModes((prev) => ({ ...prev, [tab]: value }));
+
+  // Close the mobile section menu on outside click or Escape.
+  useEffect(() => {
+    if (!navOpen) return undefined;
+    const onPointerDown = (e) => {
+      if (navRef.current && !navRef.current.contains(e.target)) setNavOpen(false);
+    };
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setNavOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [navOpen]);
 
   // Products sharing a (normalized) name + category — likely saved twice.
   const duplicateKeys = useMemo(() => duplicateKeySet(products), [products]);
@@ -95,44 +127,80 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
     setAddingTestimonial(false);
   };
 
+  const tabCounts = {
+    settings: (settings || []).length,
+    products: (products || []).length,
+    reps: (reps || []).length,
+    testimonials: (testimonials || []).length,
+    portfolio: (portfolio || []).length,
+    whyUs: (whyUs || []).length,
+    howTo: (howTo || []).length,
+    faqs: (faqs || []).length,
+  };
+  const activeTabLabel = (TABS.find(([key]) => key === tab) || [null, "Admin"])[1];
+
   return (
     <section className="admin-section">
-      <div className="admin-toolbar">
-        <div>
-          <h2>Dashboard</h2>
-          <p className="admin-intro">
-            Manage site settings, products, sales reps and testimonials. Changes go live immediately.
-          </p>
-        </div>
-        <form action={logoutAction}>
-          <button type="submit" className="admin-btn admin-btn-ghost">
-            Sign out
-          </button>
-        </form>
-      </div>
+      {/* Sticky admin bar. Title on the left; on desktop Sign out sits on the
+          right, and on <=640px a hamburger takes that same spot and opens the
+          sections + Sign out instead. */}
+      <div className="admin-sticky" ref={navRef}>
+        <div className="admin-topbar">
+          <h2 className="admin-topbar-title">{activeTabLabel}</h2>
 
-      <div className="admin-tabs" role="tablist" aria-label="Admin sections">
-        {[
-          ["settings", `Settings (${(settings || []).length})`],
-          ["products", `Products (${(products || []).length})`],
-          ["reps", `Sales reps (${(reps || []).length})`],
-          ["testimonials", `Testimonials (${(testimonials || []).length})`],
-          ["portfolio", `Portfolio (${(portfolio || []).length})`],
-          ["whyUs", `Why us (${(whyUs || []).length})`],
-          ["howTo", `How to order (${(howTo || []).length})`],
-          ["faqs", `FAQ (${(faqs || []).length})`],
-        ].map(([key, label]) => (
           <button
-            key={key}
             type="button"
-            role="tab"
-            aria-selected={tab === key}
-            className="admin-tab"
-            onClick={() => setTab(key)}
+            className="admin-nav-toggle"
+            aria-expanded={navOpen}
+            aria-controls="admin-sections-menu"
+            onClick={() => setNavOpen((v) => !v)}
           >
-            {label}
+            <span className="admin-nav-burger" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
+            <span className="admin-nav-toggle-label">Sections</span>
+            <span className="admin-nav-chevron" aria-hidden="true">
+              ▾
+            </span>
           </button>
-        ))}
+
+          <form action={logoutAction} className="admin-topbar-signout">
+            <button type="submit" className="admin-btn admin-btn-ghost">
+              Sign out
+            </button>
+          </form>
+        </div>
+
+        <div
+          id="admin-sections-menu"
+          className={`admin-nav-menu${navOpen ? " admin-nav-menu-open" : ""}`}
+        >
+          <div className="admin-tabs" role="tablist" aria-label="Admin sections">
+            {TABS.map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={tab === key}
+                className="admin-tab"
+                onClick={() => {
+                  setTab(key);
+                  setNavOpen(false);
+                }}
+              >
+                {label} ({tabCounts[key]})
+              </button>
+            ))}
+          </div>
+
+          <form action={logoutAction} className="admin-nav-signout">
+            <button type="submit" className="admin-btn admin-btn-ghost">
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
 
       {tab === "settings" ? <SettingsTab settings={settings} /> : null}
