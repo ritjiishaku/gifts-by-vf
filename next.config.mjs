@@ -12,9 +12,6 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    serverActions: {
-      bodySizeLimit: "8mb",
-    },
     // Admin image uploads go through a Server Action (uploadImageAction), which
     // streams the file in the request body. Next.js rejects any Server Action
     // body over 1 MB by default with a framework-level error, so the client only
