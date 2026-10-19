@@ -5,7 +5,7 @@ import {
   getSettings,
   getProducts,
 } from "@/lib/data";
-import { settingsFromRows, waLink, SITE_URL } from "@/lib/site";
+import { settingsFromRows, waLink, SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/site";
 import {
   directImageUrl,
   validateUrl,
@@ -31,8 +31,9 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product) return {};
+  const resolvedSlug = product.slug || slug;
   const image = validateUrl(directImageUrl(product.image_url));
-  const og = ogImage(image);
+  const og = ogImage(image) || ogImage(DEFAULT_OG_IMAGE);
   const ogImages = og
     ? [
         {
