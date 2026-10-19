@@ -20,6 +20,7 @@ import { DEFAULTS } from "@/lib/site";
 import { Icon } from "@/components/icons";
 import { AdminProductForm } from "./AdminProductForm";
 import { AdminRepForm } from "./AdminRepForm";
+import { AdminOrdersPanel } from "./AdminOrdersPanel";
 import { AdminTestimonialsForm } from "./AdminTestimonialsForm";
 import { AdminWhyUsForm } from "./AdminWhyUsForm";
 import { AdminPortfolioForm } from "./AdminPortfolioForm";
@@ -39,6 +40,7 @@ const TABS = [
   ["settings", "Settings"],
   ["products", "Products"],
   ["reps", "Sales reps"],
+  ["orders", "Orders"],
   ["testimonials", "Testimonials"],
   ["portfolio", "Portfolio"],
   ["whyUs", "Why us"],
@@ -46,7 +48,7 @@ const TABS = [
   ["faqs", "FAQ"],
 ];
 
-export function AdminDashboard({ settings, products, reps, testimonials, whyUs, portfolio, howTo, faqs }) {
+export function AdminDashboard({ settings, products, reps, payouts, testimonials, whyUs, portfolio, howTo, faqs }) {
   const [tab, setTab] = useState("settings");
   // On narrow screens the section tabs collapse into a hamburger dropdown.
   const [navOpen, setNavOpen] = useState(false);
@@ -131,6 +133,7 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
     settings: (settings || []).length,
     products: (products || []).length,
     reps: (reps || []).length,
+    orders: (payouts || []).length,
     testimonials: (testimonials || []).length,
     portfolio: (portfolio || []).length,
     whyUs: (whyUs || []).length,
@@ -409,6 +412,10 @@ export function AdminDashboard({ settings, products, reps, testimonials, whyUs, 
             ) : null}
           </div>
         </div>
+      ) : null}
+
+      {tab === "orders" ? (
+        <AdminOrdersPanel payouts={payouts} reps={reps} products={products} />
       ) : null}
 
       {tab === "testimonials" ? (

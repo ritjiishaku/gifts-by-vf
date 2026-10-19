@@ -111,7 +111,7 @@ export async function POST(request) {
     const { pin_hash, ...safeRep } = dashboard.rep;
 
     return NextResponse.json(
-      { rep: safeRep, payouts: dashboard.payouts, pinCreated: true },
+      { rep: safeRep, payouts: dashboard.payouts, notifications: dashboard.notifications, pinCreated: true },
       { headers: { "Cache-Control": "no-store" } }
     );
   }
@@ -135,11 +135,36 @@ export async function POST(request) {
     return NextResponse.json({ error: "Invalid rep code or PIN." }, { status: 401 });
   }
 
+  // --- ACTION: read-notifications (mark everything as read) ---
+  // PIN-verified above; never reachable without a correct PIN.
+  if (action === "read-notifications") {
+    try {
+      const { error } = await supabase()
+        .from("notifications")
+        .update({ is_read: true })
+        .ilike("rep_id", String(rep.rep_id || "").trim())
+        .eq("is_read", false);
+      if (error) throw error;
+    } catch (err) {
+      console.error("[api/reps] read-notifications:", err.message);
+      return NextResponse.json({ error: "Could not update notifications." }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
+  }
+
   const dashboard = await getRepDashboard(repCode);
   const { pin_hash, ...safeRep } = dashboard.rep;
 
+  // --- ACTION: poll (portal refresh every ~30s: bell + commission table) ---
+  if (action === "poll") {
+    return NextResponse.json(
+      { payouts: dashboard.payouts, notifications: dashboard.notifications },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
   return NextResponse.json(
-    { rep: safeRep, payouts: dashboard.payouts },
+    { rep: safeRep, payouts: dashboard.payouts, notifications: dashboard.notifications },
     { headers: { "Cache-Control": "no-store" } }
   );
 }

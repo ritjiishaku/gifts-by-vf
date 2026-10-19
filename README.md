@@ -24,11 +24,13 @@ Bespoke gifts storefront — customised jewellery, acrylic frames/prints, brand 
 **Sales-rep portal (`/reps`)**
 - Login by `rep_id` + personal PIN (first-time reps set their PIN on first sign-in)
 - Personalised WhatsApp + catalogue links, commission rule, and payout history
+- **Notification bell** — alerts when the owner records an order for the rep or closes a deal; unread badge + list, refreshed every 30s while the portal is open (no re-login needed)
 
 **Owner CMS (`/admin`)**
 - Passphrase-gated (server-side) CRUD for all content types:
   - Settings (brand, hero, section labels, category images, footer, commission line)
-  - Products, Sales reps, Testimonials, Portfolio, Why Us, How to Order, FAQ
+  - Products, Sales reps, Orders, Testimonials, Portfolio, Why Us, How to Order, FAQ
+- **Orders tab** — record an order for a rep (sends them a "New order" notification) and move deals `pending → closed → paid` (closing sends a one-time "Deal closed" notification)
 - Searchable icon picker for product, portfolio and Why-Us icons
 - Per-rep invite/share panel and PIN reset
 - **Image uploads** — pick a file and it's downscaled in the browser, stored in a public Supabase Storage bucket, and served via `next/image` (automatic resize + WebP/AVIF). A paste-a-link field remains for any external URL
@@ -52,7 +54,8 @@ Bespoke gifts storefront — customised jewellery, acrylic frames/prints, brand 
 | `site_settings` | Key/value site copy: brand, hero, section labels, WhatsApp number, category images, footer |
 | `products` | Catalogue: name, slug, description, image/video URL, price, category/subcategory/product type, stock, occasion, details, icon |
 | `sales_reps` | `rep_id`, name, commission rate, active flag, scrypt `pin_hash` |
-| `payouts` | Order/commission records shown in the rep portal |
+| `payouts` | Order/commission records shown in the rep portal (status lifecycle: `pending → closed → paid`) |
+| `notifications` | Per-rep alerts: `new_order` / `deal_closed`, unread flag, optional `payout_id` link |
 | `testimonials` | Quote, name, source, rating |
 | `portfolio` | Image URLs, caption, category, wide flag, optional icon badge |
 | `why_us` | Heading, description, icon |
@@ -72,6 +75,8 @@ SQL is kept in `supabase/migrations/` and versioned in git:
 | `0003_backfill_product_slugs.sql` | Populates `products.slug` (idempotent) |
 | `0004_portfolio_icon.sql` | `portfolio.icon` |
 | `0005_image_storage.sql` | Public `images` Storage bucket + read policy (for uploaded/migrated images) |
+| `0006_backfill_unique_product_slugs.sql` | De-duplicates any remaining `products.slug` collisions (idempotent) |
+| `0007_notifications.sql` | `notifications` table (rep order/deal alerts) + index + RLS |
 
 Apply them in order, either in the **Supabase Dashboard → SQL Editor** (paste and run), or with the CLI after `supabase link`:
 

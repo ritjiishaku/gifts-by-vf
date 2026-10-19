@@ -5,6 +5,9 @@ export const metadata = {
   robots: { index: false },
 };
 
+// The notification bell lives in the dashboard intro (client-side, see
+// RepPortal), so the header stays server-rendered here. It's hidden on the
+// auth screens via `.page-shell:has(.auth-shell) .rep-header`.
 export default function RepsLayout({ children }) {
   return (
     <div className="page-shell">

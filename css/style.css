@@ -1473,33 +1473,12 @@ body {
     font-size: 1rem;
     line-height: 1.7;
 }
-.gift-chips {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-.gift-chips span {
-    display: inline-flex;
-    align-items: center;
-    padding: 8px 14px;
-    border-radius: 999px;
-    border: 1px solid rgba(201,169,110,0.3);
-    background: rgba(201,169,110,0.08);
-    color: var(--dark);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-}
 .rep-page-shell, .admin-page {
     background:
         radial-gradient(ellipse at 80% 4%, rgba(201, 169, 110, 0.16) 0%, transparent 52%),
         radial-gradient(ellipse at 8% 30%, rgba(201, 169, 110, 0.08) 0%, transparent 48%),
         linear-gradient(180deg, #fffefb 0%, #f5f0e8 100%);
 }
-.rep-hero .section-label { letter-spacing: 4px; }
 .rep-stats {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1860,20 +1839,7 @@ body {
 .rep-earnings-card .rep-stat-num { overflow-wrap: anywhere; font-size: 1.25rem; }
 .rep-earnings-card .rep-stat-label { font-size: 0.59rem; letter-spacing: 0.7px; }
 .rep-earnings-card .rep-hint { margin: 0 0 12px; font-size: 0.82rem; }
-.rep-history-link {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 18px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border-light);
-    color: #8a6d3b;
-    font-size: 0.82rem;
-    font-weight: 700;
-    text-decoration: none;
-}
-.rep-history-link:hover { color: var(--dark); }
+.rep-earnings-card .rep-hint:last-child { margin-bottom: 0; }
 .rep-commission-history { grid-area: history; overflow: hidden; }
 .rep-commission-history > summary {
     display: flex;
@@ -1889,7 +1855,6 @@ body {
 .rep-commission-history > summary::-webkit-details-marker { display: none; }
 .rep-commission-history > summary::after { content: '+'; color: var(--gold); font-size: 1.35rem; line-height: 1; }
 .rep-commission-history[open] > summary::after { content: '\2212'; }
-.rep-history-summary-hint { margin-left: auto; color: var(--text-light); font-size: 0.74rem; font-weight: 400; }
 .rep-commission-history-content { padding: 0 22px 20px; }
 .rep-catalogue-toolbar { margin: 16px 0 18px; }
 .rep-catalogue-toolbar-row {
@@ -2097,7 +2062,114 @@ body {
 .rep-status { padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 .rep-status.pending { background: #fdf3d7; color: #8a6d1a; }
 .rep-status.paid { background: #e6f4e6; color: #247a24; }
+.rep-status.closed { background: #e8eefb; color: #2b4a9b; }
 .rep-empty { color: var(--text-light); font-style: italic; font-size: 0.9rem; }
+
+/* ── Rep notification bell ── */
+.rep-intro-actions { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
+.rep-bell-wrap { position: relative; }
+.rep-bell {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.34);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.rep-bell:hover, .rep-bell[aria-expanded="true"] { border-color: #e2c787; color: #e2c787; }
+.rep-bell-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #c9a96e;
+    color: #24211d;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.rep-bell-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 40;
+    width: min(330px, calc(100vw - 40px));
+    max-height: 60vh;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid var(--border-input);
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+    padding: 8px;
+}
+.rep-bell-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px 10px;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    color: var(--text);
+    font-size: 0.85rem;
+}
+.rep-bell-mark {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--gold);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.rep-bell-mark:hover { text-decoration: underline; }
+.rep-bell-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.rep-bell-item:hover { background: rgba(201,169,110,0.12); }
+.rep-bell-item.unread { background: rgba(201,169,110,0.08); }
+.rep-bell-dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    margin-top: 6px;
+    border-radius: 50%;
+    background: transparent;
+}
+.rep-bell-item.unread .rep-bell-dot { background: var(--gold); }
+.rep-bell-item-text { display: flex; flex-direction: column; gap: 2px; color: var(--text); font-size: 0.85rem; line-height: 1.4; min-width: 0; }
+.rep-bell-item-text strong { font-size: 0.8rem; }
+.rep-bell-item-text span { color: var(--text-light); font-size: 0.8rem; }
+.rep-bell-item-text em { color: var(--text-light); font-size: 0.7rem; font-style: normal; }
+.rep-bell-empty {
+    margin: 0;
+    padding: 18px 12px;
+    color: var(--text-light);
+    font-size: 0.85rem;
+    font-style: italic;
+    text-align: center;
+}
 
 /* ── ADMIN PAGE ── */
 .admin-page { padding: 24px 0 40px; }
@@ -2316,7 +2388,8 @@ body {
     .rep-dashboard { padding: 14px 14px 48px; }
     .rep-dashboard-intro { align-items: stretch; flex-direction: column; gap: 16px; margin-bottom: 14px; padding: 20px; border-radius: 14px; }
     .rep-dashboard-intro h2 { font-size: 1.7rem; }
-    .rep-logout { width: 100%; min-height: 44px; }
+    .rep-intro-actions { width: 100%; justify-content: space-between; }
+    .rep-intro-actions .rep-logout { flex: 1 1 auto; width: auto; min-height: 44px; }
     .rep-dashboard-layout { display: flex; flex-direction: column; gap: 14px; }
     .rep-earnings-sidebar,
     .rep-catalogue-panel,
@@ -2343,7 +2416,6 @@ body {
     .rep-products-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
     .rep-products-grid .rep-product { margin: 0; }
     .rep-commission-history > summary { padding: 16px; }
-    .rep-history-summary-hint { display: none; }
     .rep-commission-history-content { padding: 0 14px 16px; }
     .rep-table-scroll { overflow: visible; }
     .rep-table,
@@ -2683,6 +2755,10 @@ body.lightbox-open { overflow: hidden; }
     letter-spacing: 0.4px;
     text-transform: uppercase;
 }
+.admin-status { padding: 3px 10px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.admin-status.pending { background: #fdf3d7; color: #8a6d1a; }
+.admin-status.closed { background: #e8eefb; color: #2b4a9b; }
+.admin-status.paid { background: #e6f4e6; color: #247a24; }
 .admin-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
 
 .admin-setting-row {

@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { verifySessionCookieValue, SESSION_COOKIE } from "@/lib/auth";
-import { getSettings, getAll, getReps } from "@/lib/data";
+import { getSettings, getAll, getReps, getPayouts } from "@/lib/data";
 import { AdminLogin } from "./components/AdminLogin";
 import { AdminDashboard } from "./components/AdminDashboard";
 
@@ -12,11 +12,12 @@ export default async function AdminPage() {
     return <AdminLogin />;
   }
 
-  const [settings, products, reps, testimonials, portfolio, whyUs, howTo, faqs] =
+  const [settings, products, reps, payouts, testimonials, portfolio, whyUs, howTo, faqs] =
     await Promise.all([
       getSettings(),
       getAll("products"),
       getReps(),
+      getPayouts(),
       getAll("testimonials"),
       getAll("portfolio"),
       getAll("why_us"),
@@ -29,6 +30,7 @@ export default async function AdminPage() {
       settings={settings}
       products={products}
       reps={reps}
+      payouts={payouts}
       testimonials={testimonials}
       portfolio={portfolio}
       whyUs={whyUs}

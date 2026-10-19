@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/icons";
 import { SiteImage } from "@/components/SiteImage";
 import {
@@ -34,6 +34,9 @@ export function RepPortal({ products, commissionRule }) {
   const [payoutShown, setPayoutShown] = useState(REP_PAYOUT_LIMIT);
   const [filter, setFilter] = useState({ query: "", category: "all", price: "any", occasion: "all", sort: "featured" });
   const [pinStatus, setPinStatus] = useState("idle"); // idle | checking | no-pin | has-pin | not-found
+  const [notifications, setNotifications] = useState([]);
+  const [bellOpen, setBellOpen] = useState(false);
+  const bellRef = useRef(null);
 
   useEffect(() => {
     const saved = sessionStorage.getItem(SESSION_KEY);
@@ -77,6 +80,95 @@ export function RepPortal({ products, commissionRule }) {
     };
   }, [input, step]);
 
+  // Live updates: while the dashboard is open, poll every 30s so new orders and
+  // closed deals appear without logging out (also refreshes the commission
+  // table). 30s = 2 requests/min, safely under the API's 10/min throttle.
+  // Poll failures are silent — the last known list stays on screen.
+  useEffect(() => {
+    if (step !== "dashboard" || !rep?.rep_id || !pin) return undefined;
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const res = await fetch("/api/reps", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "poll", rep: rep.rep_id, pin }),
+          cache: "no-store",
+        });
+        if (!res.ok || cancelled) return;
+        const json = await res.json();
+        if (cancelled) return;
+        if (Array.isArray(json.notifications)) setNotifications(json.notifications);
+        if (Array.isArray(json.payouts)) setPayouts(json.payouts);
+      } catch {
+        /* network blip — keep showing the last known list */
+      }
+    };
+    const timer = setInterval(tick, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [step, rep, pin]);
+
+  // Close the notification dropdown on outside click or Escape.
+  useEffect(() => {
+    if (!bellOpen) return undefined;
+    const onPointerDown = (e) => {
+      if (bellRef.current && !bellRef.current.contains(e.target)) setBellOpen(false);
+    };
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setBellOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [bellOpen]);
+
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  // Optimistic read: flip locally, tell the server fire-and-forget.
+  const markNotificationsRead = () => {
+    if (unreadCount === 0) return;
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    const code = String(rep?.rep_id || "").trim();
+    if (!code || !pin) return;
+    fetch("/api/reps", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "read-notifications", rep: code, pin }),
+      cache: "no-store",
+    }).catch(() => {});
+  };
+
+  const openNotification = (n) => {
+    markNotificationsRead();
+    setBellOpen(false);
+    if (n?.type === "new_order") {
+      const el = document.getElementById("rep-commission-history");
+      if (el) {
+        el.open = true;
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  };
+
+  const notifTime = (iso) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    const mins = Math.floor((Date.now() - d.getTime()) / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 7) return `${days}d ago`;
+    return d.toLocaleDateString("en-NG", { day: "numeric", month: "short" });
+  };
+
   const login = async (e) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
     if (e && typeof e.stopPropagation === "function") e.stopPropagation();
@@ -112,6 +204,7 @@ export function RepPortal({ products, commissionRule }) {
       setRep({ rep_id: found.rep_id, name: found.name, rate: found.commission_rate });
       setPayoutsError("");
       setPayouts(Array.isArray(json.payouts) ? json.payouts : []);
+      setNotifications(Array.isArray(json.notifications) ? json.notifications : []);
       sessionStorage.setItem(SESSION_KEY, found.rep_id);
       setStep("dashboard");
     } catch (err) {
@@ -160,6 +253,7 @@ export function RepPortal({ products, commissionRule }) {
       setRep({ rep_id: found.rep_id, name: found.name, rate: found.commission_rate });
       setPayoutsError("");
       setPayouts(Array.isArray(json.payouts) ? json.payouts : []);
+      setNotifications(Array.isArray(json.notifications) ? json.notifications : []);
       sessionStorage.setItem(SESSION_KEY, found.rep_id);
       setPinNotice("Your PIN has been created successfully! Remember it for future sign-ins.");
       setStep("dashboard");
@@ -174,6 +268,8 @@ export function RepPortal({ products, commissionRule }) {
     sessionStorage.removeItem(SESSION_KEY);
     setRep(null);
     setPayouts(null);
+    setNotifications([]);
+    setBellOpen(false);
     setStep("login");
     setInput("");
     setPin("");
@@ -507,30 +603,8 @@ export function RepPortal({ products, commissionRule }) {
           filteredProducts.length === 1 ? "product matches" : "products match"
         } your filters`;
 
-  const payoutSummary = (() => {
-    if (payoutsError) return "";
-    if (mine.length === 0) {
-      return "No commissions recorded yet. Sales you refer will appear here once the owner confirms them.";
-    }
-    const saleLabel = mine.length === 1 ? "sale" : "sales";
-    return `${mine.length} ${saleLabel} · Pending: ${naira(pendingTotal)} · Paid: ${naira(paidTotal)}`;
-  })();
-
   return (
     <>
-      <section className="page-hero rep-hero">
-        <div className="page-hero-copy">
-          <p className="section-label">Sales portal</p>
-          <h1>Share gifts and track commission</h1>
-          <p>Login with your rep code to get personalised product links and monitor your confirmed sales.</p>
-        </div>
-        <div className="gift-chips" aria-label="Rep features">
-          <span>Share links</span>
-          <span>Track payouts</span>
-          <span>Earn commission</span>
-        </div>
-      </section>
-
       <section id="rep-dashboard" className="rep-dashboard">
       {pinNotice ? (
         <div
@@ -574,9 +648,65 @@ export function RepPortal({ products, commissionRule }) {
           <h2>Welcome back, <span id="rep-name">{rep.name || rep.rep_id}</span></h2>
           <p>Find a gift to share or check your latest commission activity.</p>
         </div>
-        <button id="rep-logout" className="rep-btn rep-logout" type="button" onClick={logout}>
-          Start over
-        </button>
+        <div className="rep-intro-actions">
+          <div className="rep-bell-wrap" ref={bellRef}>
+            <button
+              type="button"
+              className="rep-bell"
+              onClick={() => setBellOpen((v) => !v)}
+              aria-label={
+                unreadCount > 0
+                  ? `Notifications (${unreadCount} unread)`
+                  : "Notifications"
+              }
+              aria-expanded={bellOpen}
+              aria-haspopup="true"
+            >
+              <Icon name="bell" size={20} />
+              {unreadCount > 0 ? (
+                <span className="rep-bell-badge">{unreadCount > 9 ? "9+" : unreadCount}</span>
+              ) : null}
+            </button>
+
+            {bellOpen ? (
+              <div className="rep-bell-panel">
+                <div className="rep-bell-head">
+                  <strong>Notifications</strong>
+                  {unreadCount > 0 ? (
+                    <button type="button" className="rep-bell-mark" onClick={markNotificationsRead}>
+                      Mark all read
+                    </button>
+                  ) : null}
+                </div>
+                {notifications.length === 0 ? (
+                  <p className="rep-bell-empty">
+                    You&apos;re all caught up. New orders and closed deals will show here.
+                  </p>
+                ) : (
+                  notifications.slice(0, 15).map((n) => (
+                    <button
+                      type="button"
+                      key={n.id}
+                      className={`rep-bell-item${n.is_read ? "" : " unread"}`}
+                      onClick={() => openNotification(n)}
+                    >
+                      <span className="rep-bell-dot" aria-hidden="true" />
+                      <span className="rep-bell-item-text">
+                        <strong>{n.title}</strong>
+                        {n.body ? <span>{n.body}</span> : null}
+                        <em>{notifTime(n.created_at)}</em>
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            ) : null}
+          </div>
+
+          <button id="rep-logout" className="rep-btn rep-logout" type="button" onClick={logout}>
+            Start over
+          </button>
+        </div>
       </div>
 
       <div className="rep-dashboard-layout">
@@ -607,9 +737,6 @@ export function RepPortal({ products, commissionRule }) {
               Any order placed through your links within {REP_CREDIT_WINDOW_DAYS} days of the
               buyer&apos;s first click is credited to you.
             </p>
-            <a className="rep-history-link" href="#rep-commission-history" id="rep-history-link">
-              View payout history <span aria-hidden="true">→</span>
-            </a>
           </div>
         </aside>
 
@@ -794,16 +921,18 @@ export function RepPortal({ products, commissionRule }) {
         <details id="rep-commission-history" className="rep-commission-history" open>
           <summary>
             <span>Commission history</span>
-            <span className="rep-history-summary-hint">Confirmed sales and payout details</span>
           </summary>
           <div className="rep-commission-history-content">
             {payoutsError ? (
               <p className="rep-hint">{payoutsError}</p>
             ) : (
               <>
-                <p id="rep-payout-summary" className={`rep-hint${mine.length ? "" : " hidden"}`}>
-                  {payoutSummary}
-                </p>
+                {mine.length === 0 ? (
+                  <p className="rep-empty">
+                    No commissions recorded yet. Sales you refer will appear here once the owner
+                    confirms them.
+                  </p>
+                ) : null}
                 <div className="rep-table-scroll">
                   <table id="rep-payouts" className={`rep-table${mine.length ? "" : " hidden"}`}>
                     <thead>
@@ -817,15 +946,19 @@ export function RepPortal({ products, commissionRule }) {
                     </thead>
                     <tbody>
                       {mine.slice(0, payoutShown).map((r, i) => {
-                        const paid = String(r.status || "").toLowerCase() === "paid";
+                        const status = String(r.status || "").toLowerCase();
+                        const paid = status === "paid";
+                        const closed = status === "closed";
                         return (
                           <tr key={i}>
                             <td data-label="Product">{r.product}</td>
                             <td data-label="Order amount">{naira(parseFloat(r.order_amount) || 0)}</td>
                             <td data-label="Commission">{naira(parseFloat(r.commission) || 0)}</td>
                             <td data-label="Status">
-                              <span className={`rep-status ${paid ? "paid" : "pending"}`}>
-                                {paid ? "Paid" : "Pending"}
+                              <span
+                                className={`rep-status ${paid ? "paid" : closed ? "closed" : "pending"}`}
+                              >
+                                {paid ? "Paid" : closed ? "Closed" : "Pending"}
                               </span>
                             </td>
                             <td data-label="Date">{r.date}</td>

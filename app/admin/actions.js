@@ -10,6 +10,7 @@ import {
   verifySessionCookieValue,
 } from "@/lib/auth";
 import { slugify, directImageUrl, validateUrl, videoUrl, isSupabaseImage, isDriveUrl } from "@/lib/format";
+import { notifyRep } from "@/lib/data";
 
 function internalError(message) {
   return { ok: false, error: message };
@@ -579,6 +580,103 @@ export async function deleteRepAction(formData) {
   } catch (err) {
     console.error("[admin] deleteRep:", err.message);
     return internalError("Could not delete the rep.");
+  }
+}
+
+/* ── Orders / deals (payouts) — recording an order notifies the rep ─────────── */
+
+const PAYOUT_STATUSES = ["pending", "closed", "paid"];
+
+function nairaText(n) {
+  return "₦" + Math.round(Number(n) || 0).toLocaleString("en-NG");
+}
+
+export async function savePayoutAction(prevState, formData) {
+  if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
+
+  const id = Number(formData.get("id")) || 0;
+  const repId = String(formData.get("rep_id") || "").trim();
+  const product = String(formData.get("product") || "").trim();
+  if (!repId) return internalError("Choose the rep for this order.");
+  if (!product) return internalError("Product is required.");
+
+  const orderAmount = Number(formData.get("order_amount")) || 0;
+  const commission = Number(formData.get("commission")) || 0;
+  let status = String(formData.get("status") || "pending").trim().toLowerCase();
+  if (!PAYOUT_STATUSES.includes(status)) status = "pending";
+  const date =
+    String(formData.get("date") || "").trim() || new Date().toISOString().slice(0, 10);
+
+  const payload = {
+    rep_id: repId,
+    product,
+    order_amount: orderAmount,
+    commission,
+    status,
+    date,
+  };
+
+  try {
+    if (id > 0) {
+      // Read the old row first so notifications fire only on the transition
+      // to "closed" — never on every save of an already-closed deal.
+      const { data: old } = await supabase()
+        .from("payouts")
+        .select("id, rep_id, product, status, commission")
+        .eq("id", id)
+        .maybeSingle();
+      if (!old) return internalError("That order no longer exists.");
+
+      const { error } = await supabase().from("payouts").update(payload).eq("id", id);
+      if (error) throw error;
+
+      const wasClosed = String(old.status || "").toLowerCase() === "closed";
+      if (status === "closed" && !wasClosed) {
+        await notifyRep(
+          repId,
+          "deal_closed",
+          "Deal closed",
+          `${product} · Commission ${nairaText(commission)} confirmed.`,
+          id
+        );
+      }
+    } else {
+      const { data, error } = await supabase()
+        .from("payouts")
+        .insert(payload)
+        .select("id")
+        .single();
+      if (error) throw error;
+      await notifyRep(
+        repId,
+        "new_order",
+        "New order recorded",
+        `${product} · Order ${nairaText(orderAmount)} · Commission ${nairaText(commission)}`,
+        data?.id ?? null
+      );
+    }
+    revalidatePath("/admin");
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (err) {
+    console.error("[admin] savePayout:", err.message);
+    return internalError("Could not save the order.");
+  }
+}
+
+export async function deletePayoutAction(formData) {
+  if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
+  const id = Number(formData.get("id")) || 0;
+  if (!id) return internalError("Missing order id.");
+  try {
+    const { error } = await supabase().from("payouts").delete().eq("id", id);
+    if (error) throw error;
+    revalidatePath("/admin");
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (err) {
+    console.error("[admin] deletePayout:", err.message);
+    return internalError("Could not delete the order.");
   }
 }
 
