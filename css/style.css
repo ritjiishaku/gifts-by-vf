@@ -2136,18 +2136,38 @@ body {
     line-height: 1;
 }
 .rep-bell-panel {
-    position: absolute;
-    top: calc(100% + 10px);
-    right: 0;
+    /* Mobile-first: a fixed sheet pinned under the sticky header — both edges
+       clamped to the viewport, so it can never overflow any phone screen
+       (notches, safe areas, landscape). */
+    position: fixed;
+    top: 72px; /* header ≈64px tall at ≤640px (12px padding ×2 + 40px button) + 8px gap */
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: 360px;
+    margin-inline-start: auto; /* right-aligned, like the desktop drop-down */
     z-index: 110; /* must paint above the sticky .rep-header (z-index:100) */
-    width: min(330px, calc(100vw - 40px));
-    max-height: 60vh;
+    /* dvh (not vh) so mobile browser chrome never pushes items out of view */
+    max-height: calc(100dvh - 72px - 12px - env(safe-area-inset-bottom, 0px));
     overflow-y: auto;
+    overscroll-behavior: contain; /* scrolling the list doesn't scroll the page */
     background: #fff;
     border: 1px solid var(--border-input);
     border-radius: 12px;
     box-shadow: 0 16px 40px rgba(0,0,0,0.18);
     padding: 8px;
+}
+@media (min-width: 641px) {
+    /* Desktop: anchored drop-down under the bell (plenty of room). */
+    .rep-bell-panel {
+        position: absolute;
+        top: calc(100% + 10px);
+        left: auto;
+        right: 0;
+        margin-inline-start: 0;
+        width: 330px;
+        max-height: 60vh;
+    }
 }
 .rep-bell-head {
     display: flex;
