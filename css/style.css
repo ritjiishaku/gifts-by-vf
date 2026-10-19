@@ -1808,8 +1808,44 @@ body {
     font-size: clamp(1.6rem, 3vw, 2.2rem);
 }
 .rep-dashboard-intro p:last-child { margin: 0; color: rgba(255,255,255,0.72); font-size: 0.9rem; }
-.rep-logout { flex: 0 0 auto; margin: 0; background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.34); }
-.rep-logout:hover { border-color: #e2c787; color: #e2c787; }
+/* Header-scoped session actions. Light theme (the button now lives on the
+   white sticky header, not the dark welcome card); icon-only ≤640px.
+   Scoped under .rep-header so it beats the later .rep-btn gold defaults. */
+.rep-header .rep-logout {
+    flex: 0 0 auto;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 8px 10px;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border-input);
+    font-size: 0.7rem;
+    text-transform: none;
+    letter-spacing: 0;
+}
+.rep-header .rep-logout:hover { border-color: var(--gold); color: var(--gold); background: transparent; }
+.rep-logout-label { display: none; } /* mobile: icon-only (aria-label/title carry meaning) */
+.rep-header-actions { display: flex; align-items: center; gap: 8px; }
+.rep-header-name {
+    display: none; /* shown ≥641px */
+    max-width: 34vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-light);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+@media (min-width: 641px) {
+    .rep-header-name { display: inline; }
+    .rep-bell { width: 44px; height: 44px; }
+    .rep-header .rep-logout { padding: 8px 14px; min-height: 44px; }
+    .rep-logout-label { display: inline; }
+}
 .rep-dashboard-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 320px;
@@ -2065,24 +2101,23 @@ body {
 .rep-status.closed { background: #e8eefb; color: #2b4a9b; }
 .rep-empty { color: var(--text-light); font-style: italic; font-size: 0.9rem; }
 
-/* ── Rep notification bell ── */
-.rep-intro-actions { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
+/* ── Rep notification bell (lives in the sticky header) ── */
 .rep-bell-wrap { position: relative; }
 .rep-bell {
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    background: rgba(255,255,255,0.08);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.34);
+    width: 40px; /* mobile; 44px ≥641px */
+    height: 40px;
+    background: #f6f3ec;
+    color: var(--dark);
+    border: 1px solid var(--border-input);
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.3s;
 }
-.rep-bell:hover, .rep-bell[aria-expanded="true"] { border-color: #e2c787; color: #e2c787; }
+.rep-bell:hover, .rep-bell[aria-expanded="true"] { border-color: var(--gold); color: var(--gold); }
 .rep-bell-badge {
     position: absolute;
     top: -6px;
@@ -2104,7 +2139,7 @@ body {
     position: absolute;
     top: calc(100% + 10px);
     right: 0;
-    z-index: 40;
+    z-index: 110; /* must paint above the sticky .rep-header (z-index:100) */
     width: min(330px, calc(100vw - 40px));
     max-height: 60vh;
     overflow-y: auto;
@@ -2169,6 +2204,45 @@ body {
     font-size: 0.85rem;
     font-style: italic;
     text-align: center;
+}
+
+/* ── Rep new-notification toast ── */
+.rep-toast {
+    position: fixed;
+    z-index: 120;
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    text-align: left;
+    background: #24211d;
+    color: #fff;
+    border: 1px solid var(--gold);
+    border-radius: 12px;
+    box-shadow: 0 14px 34px rgba(28, 19, 8, 0.35);
+    cursor: pointer;
+    animation: rep-toast-in 0.25s ease;
+}
+.rep-toast-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rep-toast-text strong { font-size: 0.85rem; }
+.rep-toast-text span { color: rgba(255,255,255,0.75); font-size: 0.8rem; line-height: 1.4; }
+.rep-toast > svg { flex-shrink: 0; margin-top: 2px; color: var(--gold); }
+@keyframes rep-toast-in {
+    from { opacity: 0; transform: translateY(12px); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .rep-toast { animation: none; }
+}
+@media (min-width: 641px) {
+    .rep-toast {
+        left: auto;
+        right: 20px;
+        bottom: 20px;
+        width: min(380px, calc(100vw - 40px));
+    }
 }
 
 /* ── ADMIN PAGE ── */
@@ -2355,7 +2429,7 @@ body {
     .rep-products-grid .rep-share-btn { min-width: 0; flex: 1 1 auto; }
 }
 @media (max-width: 640px) {
-    .rep-header { padding: 12px 16px; gap: 8px; flex-wrap: wrap; }
+    .rep-header { padding: 12px 16px; gap: 8px; flex-wrap: nowrap; }
     .rep-header .nav-logo { font-size: 1.25rem; letter-spacing: 1px; }
     .rep-tag { letter-spacing: 0.5px; font-size: 0.66rem; }
 
@@ -2388,8 +2462,6 @@ body {
     .rep-dashboard { padding: 14px 14px 48px; }
     .rep-dashboard-intro { align-items: stretch; flex-direction: column; gap: 16px; margin-bottom: 14px; padding: 20px; border-radius: 14px; }
     .rep-dashboard-intro h2 { font-size: 1.7rem; }
-    .rep-intro-actions { width: 100%; justify-content: space-between; }
-    .rep-intro-actions .rep-logout { flex: 1 1 auto; width: auto; min-height: 44px; }
     .rep-dashboard-layout { display: flex; flex-direction: column; gap: 14px; }
     .rep-earnings-sidebar,
     .rep-catalogue-panel,

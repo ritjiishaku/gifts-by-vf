@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { SiteImage } from "@/components/SiteImage";
 import {
@@ -15,6 +16,16 @@ import {
 const REP_PAYOUT_LIMIT = 5;
 const REP_CREDIT_WINDOW_DAYS = 30;
 const SESSION_KEY = "vf_rep_session";
+
+// Record which notifications already existed at login, so the poll's toast
+// only ever fires for genuinely new arrivals.
+function toSeenSet(list) {
+  return new Set(
+    (Array.isArray(list) ? list : [])
+      .map((n) => n?.id)
+      .filter((id) => id !== undefined && id !== null)
+  );
+}
 
 export function RepPortal({ products, commissionRule }) {
   const [step, setStep] = useState("login");
@@ -37,6 +48,11 @@ export function RepPortal({ products, commissionRule }) {
   const [notifications, setNotifications] = useState([]);
   const [bellOpen, setBellOpen] = useState(false);
   const bellRef = useRef(null);
+  // New-notification toast: only ids never seen this session trigger a toast.
+  // Null while logged out; seeded from the login payload so pre-existing
+  // unread items show in the bell but never pop a toast.
+  const seenIdsRef = useRef(null);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     const saved = sessionStorage.getItem(SESSION_KEY);
@@ -98,7 +114,21 @@ export function RepPortal({ products, commissionRule }) {
         if (!res.ok || cancelled) return;
         const json = await res.json();
         if (cancelled) return;
-        if (Array.isArray(json.notifications)) setNotifications(json.notifications);
+        if (Array.isArray(json.notifications)) {
+          const seen = seenIdsRef.current;
+          if (seen === null) {
+            // First poll after login without a seed (defensive) — adopt the
+            // list silently rather than toasting a wall of old items.
+            seenIdsRef.current = toSeenSet(json.notifications);
+          } else {
+            const fresh = json.notifications.filter((n) => n?.id !== undefined && !seen.has(n.id));
+            json.notifications.forEach((n) => {
+              if (n?.id !== undefined) seen.add(n.id);
+            });
+            if (fresh.length) setToast(fresh[0]);
+          }
+          setNotifications(json.notifications);
+        }
         if (Array.isArray(json.payouts)) setPayouts(json.payouts);
       } catch {
         /* network blip — keep showing the last known list */
@@ -129,6 +159,13 @@ export function RepPortal({ products, commissionRule }) {
   }, [bellOpen]);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  // Toasts self-dismiss after 6s (reduced-motion users just get no animation).
+  useEffect(() => {
+    if (!toast) return undefined;
+    const timer = setTimeout(() => setToast(null), 6000);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   // Optimistic read: flip locally, tell the server fire-and-forget.
   const markNotificationsRead = () => {
@@ -205,6 +242,8 @@ export function RepPortal({ products, commissionRule }) {
       setPayoutsError("");
       setPayouts(Array.isArray(json.payouts) ? json.payouts : []);
       setNotifications(Array.isArray(json.notifications) ? json.notifications : []);
+      seenIdsRef.current = toSeenSet(json.notifications);
+      setToast(null);
       sessionStorage.setItem(SESSION_KEY, found.rep_id);
       setStep("dashboard");
     } catch (err) {
@@ -254,6 +293,8 @@ export function RepPortal({ products, commissionRule }) {
       setPayoutsError("");
       setPayouts(Array.isArray(json.payouts) ? json.payouts : []);
       setNotifications(Array.isArray(json.notifications) ? json.notifications : []);
+      seenIdsRef.current = toSeenSet(json.notifications);
+      setToast(null);
       sessionStorage.setItem(SESSION_KEY, found.rep_id);
       setPinNotice("Your PIN has been created successfully! Remember it for future sign-ins.");
       setStep("dashboard");
@@ -270,6 +311,8 @@ export function RepPortal({ products, commissionRule }) {
     setPayouts(null);
     setNotifications([]);
     setBellOpen(false);
+    seenIdsRef.current = null;
+    setToast(null);
     setStep("login");
     setInput("");
     setPin("");
@@ -605,50 +648,18 @@ export function RepPortal({ products, commissionRule }) {
 
   return (
     <>
-      <section id="rep-dashboard" className="rep-dashboard">
-      {pinNotice ? (
-        <div
-          className="rep-notice"
-          style={{
-            background: "rgba(201,169,110,0.15)",
-            border: "1px solid var(--gold)",
-            padding: "12px 18px",
-            borderRadius: "10px",
-            marginBottom: "18px",
-            color: "var(--dark)",
-            fontWeight: "500",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <span>{pinNotice}</span>
-          <button
-            type="button"
-            onClick={() => setPinNotice("")}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "1.2rem",
-              lineHeight: "1",
-              padding: "0 6px",
-              color: "inherit",
-            }}
-            aria-label="Dismiss message"
-          >
-            ×
-          </button>
-        </div>
-      ) : null}
-
-      <div className="rep-dashboard-intro">
-        <div>
-          <p className="section-label">Sales portal</p>
-          <h2>Welcome back, <span id="rep-name">{rep.name || rep.rep_id}</span></h2>
-          <p>Find a gift to share or check your latest commission activity.</p>
-        </div>
-        <div className="rep-intro-actions">
+      {/* Sticky header: logo always; while logged in it also carries the
+          session actions — notification bell + Start over (icon-only ≤640px). */}
+      <header className="rep-header">
+        <Link href="/" className="nav-logo" aria-label="Gifts by VF">
+          <span className="brand-name">
+            <span className="brand-text">Gifts by V</span>
+            <span className="brand-accent">F</span>
+          </span>
+          <span className="nav-tagline">Bespoke Gifts</span>
+        </Link>
+        <div className="rep-header-actions">
+          <span className="rep-header-name">{rep.name || rep.rep_id}</span>
           <div className="rep-bell-wrap" ref={bellRef}>
             <button
               type="button"
@@ -703,9 +714,62 @@ export function RepPortal({ products, commissionRule }) {
             ) : null}
           </div>
 
-          <button id="rep-logout" className="rep-btn rep-logout" type="button" onClick={logout}>
-            Start over
+          <button
+            id="rep-logout"
+            className="rep-btn rep-logout"
+            type="button"
+            onClick={logout}
+            aria-label="Start over (sign out)"
+            title="Start over"
+          >
+            <Icon name="logout" size={18} />
+            <span className="rep-logout-label">Start over</span>
           </button>
+        </div>
+      </header>
+
+      <section id="rep-dashboard" className="rep-dashboard">
+      {pinNotice ? (
+        <div
+          className="rep-notice"
+          style={{
+            background: "rgba(201,169,110,0.15)",
+            border: "1px solid var(--gold)",
+            padding: "12px 18px",
+            borderRadius: "10px",
+            marginBottom: "18px",
+            color: "var(--dark)",
+            fontWeight: "500",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span>{pinNotice}</span>
+          <button
+            type="button"
+            onClick={() => setPinNotice("")}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "1.2rem",
+              lineHeight: "1",
+              padding: "0 6px",
+              color: "inherit",
+            }}
+            aria-label="Dismiss message"
+          >
+            ×
+          </button>
+        </div>
+      ) : null}
+
+      <div className="rep-dashboard-intro">
+        <div>
+          <p className="section-label">Sales portal</p>
+          <h2>Welcome back, <span id="rep-name">{rep.name || rep.rep_id}</span></h2>
+          <p>Find a gift to share or check your latest commission activity.</p>
         </div>
       </div>
 
@@ -987,6 +1051,25 @@ export function RepPortal({ products, commissionRule }) {
         </details>
       </div>
       </section>
+
+      {/* Transient banner so a rep browsing the catalogue can't miss a new
+          order/deal even without looking at the bell. Tap = same as bell item. */}
+      {toast ? (
+        <button
+          type="button"
+          className="rep-toast"
+          onClick={() => {
+            setToast(null);
+            openNotification(toast);
+          }}
+        >
+          <Icon name="bell" size={18} />
+          <span className="rep-toast-text">
+            <strong>{toast.title}</strong>
+            {toast.body ? <span>{toast.body}</span> : null}
+          </span>
+        </button>
+      ) : null}
     </>
   );
 }
