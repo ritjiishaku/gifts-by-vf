@@ -50,10 +50,12 @@ export function RepPortal({ products, commissionRule }) {
   const [notifFilter, setNotifFilter] = useState("all"); // "all" | "unread"
   const bellRef = useRef(null);
   // New-notification toast: only ids never seen this session trigger a toast.
-  // Null while logged out; seeded from the login payload so pre-existing
-  // unread items show in the bell but never pop a toast.
+  // Empty while logged out; seeded from the login payload so pre-existing
+  // unread items show in the bell but never pop a toast. Arrivals queue up,
+  // so a second order 10 seconds after the first never erases the first.
   const seenIdsRef = useRef(null);
-  const [toast, setToast] = useState(null);
+  const [toastQueue, setToastQueue] = useState([]);
+  const toast = toastQueue[0] || null;
 
   useEffect(() => {
     const saved = sessionStorage.getItem(SESSION_KEY);
@@ -101,10 +103,15 @@ export function RepPortal({ products, commissionRule }) {
   // closed deals appear without logging out (also refreshes the commission
   // table). 30s = 2 requests/min, safely under the API's 10/min throttle.
   // Poll failures are silent — the last known list stays on screen.
+  // Background tabs throttle setInterval to ~1/min, so returning to the tab
+  // also triggers one immediate catch-up poll.
   useEffect(() => {
     if (step !== "dashboard" || !rep?.rep_id || !pin) return undefined;
     let cancelled = false;
+    let inFlight = false;
     const tick = async () => {
+      if (inFlight) return;
+      inFlight = true;
       try {
         const res = await fetch("/api/reps", {
           method: "POST",
@@ -126,19 +133,29 @@ export function RepPortal({ products, commissionRule }) {
             json.notifications.forEach((n) => {
               if (n?.id !== undefined) seen.add(n.id);
             });
-            if (fresh.length) setToast(fresh[0]);
+            // Queue (capped) so back-to-back arrivals each get their toast.
+            if (fresh.length) setToastQueue((q) => [...q, ...fresh].slice(0, 5));
           }
           setNotifications(json.notifications);
         }
         if (Array.isArray(json.payouts)) setPayouts(json.payouts);
       } catch {
         /* network blip — keep showing the last known list */
+      } finally {
+        inFlight = false;
       }
     };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") tick();
+    };
     const timer = setInterval(tick, 30000);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
     return () => {
       cancelled = true;
       clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
     };
   }, [step, rep, pin]);
 
@@ -178,11 +195,24 @@ export function RepPortal({ products, commissionRule }) {
   );
 
   // Toasts self-dismiss after 6s (reduced-motion users just get no animation).
+  // The queue advances one item at a time.
   useEffect(() => {
     if (!toast) return undefined;
-    const timer = setTimeout(() => setToast(null), 6000);
+    const timer = setTimeout(() => setToastQueue((q) => q.slice(1)), 6000);
     return () => clearTimeout(timer);
   }, [toast]);
+
+  // Browser-tab badge: while the portal is open, mirror the unread count into
+  // the tab title — "(3) Sales Portal — Gifts by VF" — so a rep who has
+  // switched tabs still sees new orders land. Restored on sign-out/unmount.
+  useEffect(() => {
+    if (step !== "dashboard") return undefined;
+    const base = document.title.replace(/^\(\d+\)\s*/, "");
+    document.title = unreadCount > 0 ? `(${unreadCount}) ${base}` : base;
+    return () => {
+      document.title = base;
+    };
+  }, [step, unreadCount]);
 
   // Optimistic read: flip locally, tell the server fire-and-forget.
   const markNotificationsRead = () => {
@@ -226,6 +256,10 @@ export function RepPortal({ products, commissionRule }) {
       }
     }
   };
+
+  // Icon per notification type, so the bell is scannable at a glance.
+  const NOTIF_ICON = { new_order: "sell", deal_closed: "payments", info: "notifications" };
+  const notifIcon = (n) => NOTIF_ICON[n?.type] || "notifications";
 
   const notifTime = (iso) => {
     const d = new Date(iso);
@@ -277,7 +311,7 @@ export function RepPortal({ products, commissionRule }) {
       setPayouts(Array.isArray(json.payouts) ? json.payouts : []);
       setNotifications(Array.isArray(json.notifications) ? json.notifications : []);
       seenIdsRef.current = toSeenSet(json.notifications);
-      setToast(null);
+      setToastQueue([]);
       sessionStorage.setItem(SESSION_KEY, found.rep_id);
       setStep("dashboard");
     } catch (err) {
@@ -328,7 +362,7 @@ export function RepPortal({ products, commissionRule }) {
       setPayouts(Array.isArray(json.payouts) ? json.payouts : []);
       setNotifications(Array.isArray(json.notifications) ? json.notifications : []);
       seenIdsRef.current = toSeenSet(json.notifications);
-      setToast(null);
+      setToastQueue([]);
       sessionStorage.setItem(SESSION_KEY, found.rep_id);
       setPinNotice("Your PIN has been created successfully! Remember it for future sign-ins.");
       setStep("dashboard");
@@ -346,7 +380,7 @@ export function RepPortal({ products, commissionRule }) {
     setNotifications([]);
     setBellOpen(false);
     seenIdsRef.current = null;
-    setToast(null);
+    setToastQueue([]);
     setStep("login");
     setInput("");
     setPin("");
@@ -759,7 +793,9 @@ export function RepPortal({ products, commissionRule }) {
                       className={`rep-bell-item${n.is_read ? "" : " unread"}`}
                       onClick={() => openNotification(n)}
                     >
-                      <span className="rep-bell-dot" aria-hidden="true" />
+                      <span className={`rep-bell-icon ${n.type || "info"}`} aria-hidden="true">
+                        <Icon name={notifIcon(n)} size={15} />
+                      </span>
                       <span className="rep-bell-item-text">
                         <strong>{n.title}</strong>
                         {n.body ? <span>{n.body}</span> : null}
@@ -1111,21 +1147,27 @@ export function RepPortal({ products, commissionRule }) {
       </section>
 
       {/* Transient banner so a rep browsing the catalogue can't miss a new
-          order/deal even without looking at the bell. Tap = same as bell item. */}
+          order/deal even without looking at the bell. Tap = same as bell item.
+          Arrivals queue (and show a "+n more" chip) instead of overwriting. */}
       {toast ? (
         <button
           type="button"
           className="rep-toast"
           onClick={() => {
-            setToast(null);
+            setToastQueue([]);
             openNotification(toast);
           }}
         >
-          <Icon name="bell" size={18} />
+          <span className={`rep-toast-icon ${toast.type || "info"}`} aria-hidden="true">
+            <Icon name={notifIcon(toast)} size={16} />
+          </span>
           <span className="rep-toast-text">
             <strong>{toast.title}</strong>
             {toast.body ? <span>{toast.body}</span> : null}
           </span>
+          {toastQueue.length > 1 ? (
+            <span className="rep-toast-more">+{toastQueue.length - 1} more</span>
+          ) : null}
         </button>
       ) : null}
     </>
