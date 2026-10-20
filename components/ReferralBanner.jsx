@@ -6,6 +6,7 @@ import {
   setReferral,
   readStoredReferral,
   storeReferral,
+  updateStoredReferralName,
   clearReferral,
 } from "./referral-store";
 
@@ -31,11 +32,14 @@ export function ReferralBanner({ reps }) {
 
     const refParam = params.get("ref");
     if (refParam && isValidRep(refParam)) {
-      const clean = storeReferral(refParam);
+      const key = String(refParam).trim().toLowerCase();
+      const rep = (reps || []).find(
+        (r) => String(r.rep_id || "").trim().toLowerCase() === key
+      );
+      // Persist the display name too, so later visits still name the rep even
+      // if a future page's server-side rep lookup fails.
+      const clean = storeReferral(refParam, rep && rep.name);
       if (clean) {
-        const rep = (reps || []).find(
-          (r) => String(r.rep_id || "").trim().toLowerCase() === clean
-        );
         setReferral({ rep_id: clean, name: (rep && rep.name) || clean });
       }
     }
@@ -48,7 +52,10 @@ export function ReferralBanner({ reps }) {
         const rep = (reps || []).find(
           (r) => String(r.rep_id || "").trim().toLowerCase() === stored.rep_id
         );
-        setReferral({ rep_id: stored.rep_id, name: (rep && rep.name) || stored.rep_id });
+        // Stored name (with rep_id fallback) wins over showing nothing if the
+        // live lookup fails; refresh the stored name when we resolve it.
+        updateStoredReferralName(stored.rep_id, rep && rep.name);
+        setReferral({ rep_id: stored.rep_id, name: (rep && rep.name) || stored.name });
       }
     }
 
