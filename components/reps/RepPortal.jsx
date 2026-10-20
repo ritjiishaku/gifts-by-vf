@@ -749,34 +749,38 @@ export function RepPortal({ products, commissionRule }) {
 
             {bellOpen ? (
               <div className="rep-bell-panel">
-                <div className="rep-bell-head">
-                  <strong>Notifications</strong>
-                  {unreadCount > 0 ? (
-                    <button type="button" className="rep-bell-mark" onClick={markNotificationsRead}>
-                      Mark all read
-                    </button>
+                {/* Sticky header: title + filter stay pinned while the list scrolls. */}
+                <div className="rep-bell-sticky">
+                  <div className="rep-bell-head">
+                    <strong>Notifications</strong>
+                    {unreadCount > 0 ? (
+                      <button type="button" className="rep-bell-mark" onClick={markNotificationsRead}>
+                        Mark all read
+                      </button>
+                    ) : null}
+                  </div>
+                  {notifications.length > 0 ? (
+                    <div className="rep-bell-filters" role="group" aria-label="Filter notifications">
+                      <button
+                        type="button"
+                        className={`rep-bell-filter${notifFilter === "all" ? " active" : ""}`}
+                        aria-pressed={notifFilter === "all"}
+                        onClick={() => setNotifFilter("all")}
+                      >
+                        All <span className="rep-bell-filter-count">{notifications.length}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`rep-bell-filter${notifFilter === "unread" ? " active" : ""}`}
+                        aria-pressed={notifFilter === "unread"}
+                        onClick={() => setNotifFilter("unread")}
+                      >
+                        Unread <span className="rep-bell-filter-count">{unreadCount}</span>
+                      </button>
+                    </div>
                   ) : null}
                 </div>
-                {notifications.length > 0 ? (
-                  <div className="rep-bell-filters" role="group" aria-label="Filter notifications">
-                    <button
-                      type="button"
-                      className={`rep-bell-filter${notifFilter === "all" ? " active" : ""}`}
-                      aria-pressed={notifFilter === "all"}
-                      onClick={() => setNotifFilter("all")}
-                    >
-                      All <span className="rep-bell-filter-count">{notifications.length}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`rep-bell-filter${notifFilter === "unread" ? " active" : ""}`}
-                      aria-pressed={notifFilter === "unread"}
-                      onClick={() => setNotifFilter("unread")}
-                    >
-                      Unread <span className="rep-bell-filter-count">{unreadCount}</span>
-                    </button>
-                  </div>
-                ) : null}
+                <div className="rep-bell-list">
                 {notifications.length === 0 ? (
                   <p className="rep-bell-empty">
                     You&apos;re all caught up. New orders and closed deals will show here.
@@ -804,6 +808,7 @@ export function RepPortal({ products, commissionRule }) {
                     </button>
                   ))
                 )}
+                </div>
               </div>
             ) : null}
           </div>

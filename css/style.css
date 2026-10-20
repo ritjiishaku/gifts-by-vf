@@ -2138,7 +2138,8 @@ body {
 .rep-bell-panel {
     /* Mobile-first: a fixed sheet pinned under the sticky header — both edges
        clamped to the viewport, so it can never overflow any phone screen
-       (notches, safe areas, landscape). */
+       (notches, safe areas, landscape). The panel itself does NOT scroll: the
+       inner .rep-bell-list does, which is what lets the header stay pinned. */
     position: fixed;
     top: 72px; /* header ≈64px tall at ≤640px (12px padding ×2 + 40px button) + 8px gap */
     left: 12px;
@@ -2149,13 +2150,25 @@ body {
     z-index: 110; /* must paint above the sticky .rep-header (z-index:100) */
     /* dvh (not vh) so mobile browser chrome never pushes items out of view */
     max-height: calc(100dvh - 72px - 12px - env(safe-area-inset-bottom, 0px));
-    overflow-y: auto;
-    overscroll-behavior: contain; /* scrolling the list doesn't scroll the page */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    overscroll-behavior: contain;
     background: #fff;
     border: 1px solid var(--border-input);
     border-radius: 12px;
     box-shadow: 0 16px 40px rgba(0,0,0,0.18);
     padding: 8px;
+}
+/* The scrolling region. min-height:0 lets it shrink inside the flex panel
+   instead of stretching it past max-height. */
+.rep-bell-list {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* Horizontal padding so item hover backgrounds don't touch the edge, while
+       the negative margin lets the sticky header's divider span full width. */
+    padding: 0 2px;
 }
 @media (min-width: 641px) {
     /* Desktop: anchored drop-down under the bell (plenty of room). */
@@ -2168,14 +2181,27 @@ body {
         width: 330px;
         max-height: 60vh;
     }
+    /* Wider than the 330px drop-down needs, so title + filter always fit on one line. */
+    .rep-bell-head { flex-wrap: nowrap; }
 }
+/* Sticky header block: title row + filter row stay pinned to the top of the
+   panel while .rep-bell-list scrolls beneath them. */
+.rep-bell-sticky {
+    flex-shrink: 0;
+    background: #fff;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    /* Round to match the panel so no square corner peeks through on mobile. */
+    border-radius: 12px 12px 0 0;
+}
+/* Title and filter share one line when it fits; the filter drops to its own
+   line only on very narrow phones instead of overflowing. */
 .rep-bell-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    padding: 8px 10px 10px;
-    border-bottom: 1px solid rgba(0,0,0,0.08);
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    padding: 8px 8px 6px;
     color: var(--text);
     font-size: 0.85rem;
 }
@@ -2187,12 +2213,13 @@ body {
     font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
+    white-space: nowrap;
 }
 .rep-bell-mark:hover { text-decoration: underline; }
 .rep-bell-filters {
     display: inline-flex;
     gap: 4px;
-    margin: 8px 10px 4px;
+    margin: 0 8px 8px;
     padding: 3px;
     background: #f6f3ec;
     border: 1px solid var(--border-input);
