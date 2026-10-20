@@ -2189,6 +2189,42 @@ body {
     cursor: pointer;
 }
 .rep-bell-mark:hover { text-decoration: underline; }
+.rep-bell-filters {
+    display: inline-flex;
+    gap: 4px;
+    margin: 8px 10px 4px;
+    padding: 3px;
+    background: #f6f3ec;
+    border: 1px solid var(--border-input);
+    border-radius: 20px;
+}
+.rep-bell-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    background: none;
+    border: none;
+    border-radius: 20px;
+    color: var(--text-light);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.rep-bell-filter.active { background: #fff; color: var(--dark); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.rep-bell-filter-count {
+    min-width: 18px;
+    padding: 0 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(201,169,110,0.25);
+    border-radius: 12px;
+    font-size: 0.68rem;
+    line-height: 1.4;
+}
+.rep-bell-filter.active .rep-bell-filter-count { background: var(--gold); color: #24211d; }
 .rep-bell-item {
     display: flex;
     align-items: flex-start;

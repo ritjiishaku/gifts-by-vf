@@ -47,6 +47,7 @@ export function RepPortal({ products, commissionRule }) {
   const [pinStatus, setPinStatus] = useState("idle"); // idle | checking | no-pin | has-pin | not-found
   const [notifications, setNotifications] = useState([]);
   const [bellOpen, setBellOpen] = useState(false);
+  const [notifFilter, setNotifFilter] = useState("all"); // "all" | "unread"
   const bellRef = useRef(null);
   // New-notification toast: only ids never seen this session trigger a toast.
   // Null while logged out; seeded from the login payload so pre-existing
@@ -160,6 +161,22 @@ export function RepPortal({ products, commissionRule }) {
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
+  // Reset the panel's read/unread filter whenever it closes, so the next
+  // open always starts on the full list.
+  useEffect(() => {
+    if (!bellOpen) setNotifFilter("all");
+  }, [bellOpen]);
+
+  // The list actually rendered in the panel (filter applied before the
+  // 15-item cap, so the unread view isn't starved by old read items).
+  const visibleNotifications = useMemo(
+    () =>
+      notifFilter === "unread"
+        ? notifications.filter((n) => !n.is_read)
+        : notifications,
+    [notifications, notifFilter]
+  );
+
   // Toasts self-dismiss after 6s (reduced-motion users just get no animation).
   useEffect(() => {
     if (!toast) return undefined;
@@ -181,8 +198,25 @@ export function RepPortal({ products, commissionRule }) {
     }).catch(() => {});
   };
 
+  // Single-notification read: clicking one item shouldn't clear the badge
+  // for items the rep hasn't opened yet.
+  const markNotificationRead = (id) => {
+    if (id === undefined || id === null) return;
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+    );
+    const code = String(rep?.rep_id || "").trim();
+    if (!code || !pin) return;
+    fetch("/api/reps", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "read-notifications", rep: code, pin, ids: [id] }),
+      cache: "no-store",
+    }).catch(() => {});
+  };
+
   const openNotification = (n) => {
-    markNotificationsRead();
+    markNotificationRead(n?.id);
     setBellOpen(false);
     if (n?.type === "new_order") {
       const el = document.getElementById("rep-commission-history");
@@ -689,12 +723,36 @@ export function RepPortal({ products, commissionRule }) {
                     </button>
                   ) : null}
                 </div>
+                {notifications.length > 0 ? (
+                  <div className="rep-bell-filters" role="group" aria-label="Filter notifications">
+                    <button
+                      type="button"
+                      className={`rep-bell-filter${notifFilter === "all" ? " active" : ""}`}
+                      aria-pressed={notifFilter === "all"}
+                      onClick={() => setNotifFilter("all")}
+                    >
+                      All <span className="rep-bell-filter-count">{notifications.length}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`rep-bell-filter${notifFilter === "unread" ? " active" : ""}`}
+                      aria-pressed={notifFilter === "unread"}
+                      onClick={() => setNotifFilter("unread")}
+                    >
+                      Unread <span className="rep-bell-filter-count">{unreadCount}</span>
+                    </button>
+                  </div>
+                ) : null}
                 {notifications.length === 0 ? (
                   <p className="rep-bell-empty">
                     You&apos;re all caught up. New orders and closed deals will show here.
                   </p>
+                ) : visibleNotifications.length === 0 ? (
+                  <p className="rep-bell-empty">
+                    No unread notifications.
+                  </p>
                 ) : (
-                  notifications.slice(0, 15).map((n) => (
+                  visibleNotifications.slice(0, 15).map((n) => (
                     <button
                       type="button"
                       key={n.id}

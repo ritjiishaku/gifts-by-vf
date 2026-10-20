@@ -135,15 +135,23 @@ export async function POST(request) {
     return NextResponse.json({ error: "Invalid rep code or PIN." }, { status: 401 });
   }
 
-  // --- ACTION: read-notifications (mark everything as read) ---
+  // --- ACTION: read-notifications (mark all as read, or just `ids` if given) ---
   // PIN-verified above; never reachable without a correct PIN.
   if (action === "read-notifications") {
     try {
-      const { error } = await supabase()
+      // Optional ids filter: clicking one bell item only clears that item.
+      // Hard cap the list so a client can't ship an unbounded update.
+      const ids = (Array.isArray(body?.ids) ? body.ids : [])
+        .filter((v) => Number.isFinite(Number(v)))
+        .slice(0, 50)
+        .map((v) => Number(v));
+      let query = supabase()
         .from("notifications")
         .update({ is_read: true })
         .ilike("rep_id", String(rep.rep_id || "").trim())
         .eq("is_read", false);
+      if (ids.length) query = query.in("id", ids);
+      const { error } = await query;
       if (error) throw error;
     } catch (err) {
       console.error("[api/reps] read-notifications:", err.message);
