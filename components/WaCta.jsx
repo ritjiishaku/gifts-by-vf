@@ -8,8 +8,11 @@ import { getReferral, subscribeReferral } from "./referral-store";
 const DEFAULT_MESSAGE = "Hello! I would love to place an order with Gifts by VF.";
 
 export function WaCta({ settings, className, id, label, ariaLabel, message }) {
-  const [ref, setRef] = useState(getReferral());
-  useEffect(() => subscribeReferral(() => setRef(getReferral())), []);
+  const [ref, setRef] = useState(getReferral);
+  useEffect(() => {
+    setRef(getReferral());
+    return subscribeReferral(() => setRef(getReferral()));
+  }, []);
 
   const base = message || DEFAULT_MESSAGE;
   const text = ref && ref.name ? `${base} I was referred by ${ref.name}.` : base;

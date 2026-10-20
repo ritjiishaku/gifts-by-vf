@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Icon, WaIcon } from "./icons";
 import { openLightbox } from "./Lightbox";
 import { SiteImage } from "./SiteImage";
+import { getReferral, subscribeReferral } from "./referral-store";
 import {
   validateUrl,
   directImageUrl,
@@ -25,6 +27,12 @@ export function orderMessage(productName, price, ref) {
 }
 
 export function ProductCard({ p, pid, settings, taxonomy, ref }) {
+  const [storeRef, setStoreRef] = useState(getReferral);
+  useEffect(() => {
+    setStoreRef(getReferral());
+    return subscribeReferral(() => setStoreRef(getReferral()));
+  }, []);
+
   let imageUrl = String(p.image_url || "").trim();
   let video = videoUrl(p.video_url);
 
@@ -45,7 +53,8 @@ export function ProductCard({ p, pid, settings, taxonomy, ref }) {
   const soldOut = isSoldOut(p);
   const badgeLabel = soldOut ? String(p.stock_label || "").trim() || "Sold Out" : category;
   const orderText = soldOut ? "Request a custom quote" : "Order this gift";
-  const waHref = waLink(settings, orderMessage(p.name, price, ref));
+  const activeRef = ref || storeRef;
+  const waHref = waLink(settings, orderMessage(p.name, price, activeRef));
 
   const typeVisible =
     productType && normalizeTaxonomyText(productType) !== normalizeTaxonomyText(p.name);

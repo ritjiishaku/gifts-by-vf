@@ -41,10 +41,13 @@ export function Catalogue({ products, taxonomy, settings }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sort, setSort] = useState("featured");
   const [shownByGroup, setShownByGroup] = useState({});
-  const [ref, setRef] = useState(getReferral());
+  const [ref, setRef] = useState(getReferral);
   const searchTimer = useRef(null);
 
-  useEffect(() => subscribeReferral(() => setRef(getReferral())), []);
+  useEffect(() => {
+    setRef(getReferral());
+    return subscribeReferral(() => setRef(getReferral()));
+  }, []);
 
   const allProducts = useMemo(() => products || [], [products]);
 

@@ -20,8 +20,9 @@ import {
 } from "@/lib/format";
 import { TAXONOMY } from "@/lib/taxonomy";
 import { taxonomyCategoryForProduct, taxonomyProductTypeForProduct } from "@/lib/taxonomy";
-import { Icon, WaIcon } from "@/components/icons";
+import { Icon } from "@/components/icons";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
+import { WaCta } from "@/components/WaCta";
 import { ProductCard } from "@/components/ProductCard";
 import { SiteImage } from "@/components/SiteImage";
 
@@ -85,8 +86,8 @@ export default async function ProductPage({ params }) {
   const category = taxonomyCategoryForProduct(product, TAXONOMY)?.name || product.category || "";
   const productType = taxonomyProductTypeForProduct(product, TAXONOMY);
   const waMessage = `Hello! I'd like to order ${product.name}${price ? ` (from ${price})` : ""}.`;
+  const soldOutMessage = `Hello! I'd like to enquire about ${product.name} as a custom order.`;
   const waHref = waLink(settings, waMessage);
-  const soldOutWaHref = waLink(settings, `Hello! I'd like to enquire about ${product.name} as a custom order.`);
 
   const resolvedSlug = product.slug || slug;
   const jsonLd = {
@@ -207,16 +208,17 @@ export default async function ProductPage({ params }) {
               ) : null}
 
               <div className="product-actions">
-                <a
-                  href={soldOut ? soldOutWaHref : waHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <WaCta
+                  settings={settings}
                   className="product-order-btn"
-                  aria-label={soldOut ? `Request a custom quote for ${product.name}` : `Order ${product.name} on WhatsApp`}
-                >
-                  <WaIcon />
-                  <span>{soldOut ? "Request a custom quote" : "Order this gift"}</span>
-                </a>
+                  label={soldOut ? "Request a custom quote" : "Order this gift"}
+                  ariaLabel={
+                    soldOut
+                      ? `Request a custom quote for ${product.name}`
+                      : `Order ${product.name} on WhatsApp`
+                  }
+                  message={soldOut ? soldOutMessage : waMessage}
+                />
                 <CopyLinkButton slug={resolvedSlug} name={product.name} />
               </div>
             </div>
