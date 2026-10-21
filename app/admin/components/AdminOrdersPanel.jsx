@@ -354,12 +354,13 @@ function AdminPayoutForm({ row, reps, products, onClose }) {
           </label>
         </div>
 
-        <div style={{ marginTop: "14px", padding: "12px 14px", background: "rgba(0,0,0,0.03)", borderRadius: "6px", fontSize: "0.82rem", color: "var(--text-light)", lineHeight: "1.5" }}>
+        <div className="admin-order-tip" style={{ marginTop: "14px", padding: "12px 14px", background: "rgba(0,0,0,0.03)", borderRadius: "6px", fontSize: "0.82rem", color: "var(--text-light)", lineHeight: "1.5" }}>
           <p style={{ margin: 0 }}>
             💡 <strong>New order</strong> alerts the rep as soon as you save. Switching status to{" "}
             <strong>Closed</strong> sends a one-time &ldquo;Deal closed&rdquo; notification.
           </p>
         </div>
+
 
         <div className="admin-form-actions">
           <button type="submit" className="admin-btn" disabled={pending}>
