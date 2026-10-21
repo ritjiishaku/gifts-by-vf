@@ -119,25 +119,17 @@ export function ProductPicker({
             required
           />
 
-          <div className="admin-product-filters" role="group" aria-label="Filter by category">
-            <button
-              type="button"
-              className={`admin-product-chip${category === "all" ? " is-active" : ""}`}
-              onClick={() => setCategory("all")}
-            >
-              All
-            </button>
-            {TAXONOMY.map((c) => (
-              <button
-                key={c.name}
-                type="button"
-                className={`admin-product-chip${category === c.name ? " is-active" : ""}`}
-                onClick={() => setCategory(c.name)}
-              >
-                {c.name}
-              </button>
-            ))}
-          </div>
+          <label className="admin-field" style={{ marginTop: "10px" }}>
+            <span className="admin-field-label">Category</span>
+            <select value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="all">All categories</option>
+              {TAXONOMY.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
 
           {open ? (
             <div className="admin-product-list" role="listbox" aria-label="Catalogue products">
