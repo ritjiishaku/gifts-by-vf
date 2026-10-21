@@ -3132,19 +3132,20 @@ body.lightbox-open { overflow: hidden; }
 .admin-product-filters {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
     margin-top: 10px;
+    width: 100%;
 }
 .admin-product-chip {
-    flex: 0 1 auto;
+    flex: 1 1 calc(50% - 6px);
     min-height: 40px;
-    padding: 8px 14px;
+    padding: 8px 10px;
     border: 1px solid var(--border-light);
     border-radius: 40px;
     background: #fff;
     color: var(--text-light);
     font: inherit;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: normal;
     text-align: center;
@@ -3685,7 +3686,7 @@ body.lightbox-open { overflow: hidden; }
 
     /* Category pills keep the wrapped rows from the base rule; they only
        need a bigger tap target on touch screens. */
-    .admin-product-chip { min-height: 44px; padding: 10px 16px; font-size: 0.82rem; }
+    .admin-product-chip { min-height: 44px; padding: 10px 12px; font-size: 0.78rem; flex: 1 1 calc(50% - 6px); white-space: normal; }
 
     /* The "custom product name" checkbox: a full-width card so the whole
        label is tappable and the box gets a comfortable touch target. */
