@@ -3112,6 +3112,106 @@ body.lightbox-open { overflow: hidden; }
     font-weight: 400;
     letter-spacing: normal;
 }
+
+/* ── ADMIN — PRODUCT PICKER (order form) ───────────────────────────────────
+   Mobile-first: the result list sits in the normal flow, so the on-screen
+   keyboard never covers it, and scrolls inside a capped-height panel. From
+   641px up it becomes an overlay so the rest of the form does not jump. */
+.admin-product-picker { position: relative; margin-top: 5px; }
+.admin-product-input { margin-top: 0; min-height: 44px; }
+.admin-product-filters {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    padding-bottom: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.admin-product-filters::-webkit-scrollbar { display: none; }
+.admin-product-chip {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 8px 14px;
+    border: 1px solid var(--border-light);
+    border-radius: 40px;
+    background: #fff;
+    color: var(--text-light);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: normal;
+    white-space: nowrap;
+    cursor: pointer;
+    touch-action: manipulation; /* stop double-tap-zoom from eating the tap */
+    -webkit-tap-highlight-color: transparent;
+}
+.admin-product-chip.is-active { border-color: var(--gold); background: rgba(198, 167, 100, 0.16); color: var(--text); }
+.admin-product-list {
+    max-height: 46vh;
+    overflow-y: auto;
+    margin-top: 10px;
+    padding: 6px;
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    background: #fff;
+}
+.admin-product-option {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 10px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: none;
+    color: var(--text);
+    font: inherit;
+    font-size: 0.9rem;
+    letter-spacing: normal;
+    text-align: left;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+.admin-product-option:hover { background: rgba(198, 167, 100, 0.1); }
+.admin-product-option.is-selected { border-color: var(--gold); background: rgba(198, 167, 100, 0.16); font-weight: 600; }
+.admin-product-option-name { flex: 1 1 160px; min-width: 0; line-height: 1.35; }
+.admin-product-option-meta { display: inline-flex; align-items: center; gap: 8px; }
+.admin-product-badge { padding: 3px 9px; border-radius: 999px; background: rgba(0, 0, 0, 0.05); color: var(--text-light); font-size: 0.66rem; font-weight: 600; letter-spacing: 0.3px; white-space: nowrap; }
+.admin-product-price { color: var(--text-light); font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+.admin-product-empty { margin: 4px 6px 6px; color: var(--text-light); font-size: 0.78rem; line-height: 1.5; }
+.admin-product-custom { margin-top: 12px; }
+.admin-link-btn {
+    display: inline;
+    margin: 0;
+    padding: 4px 2px;
+    border: 0;
+    background: none;
+    color: var(--gold);
+    font: inherit;
+    font-weight: 600;
+    letter-spacing: normal;
+    text-decoration: underline;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+@media (min-width: 641px) {
+    .admin-product-list {
+        position: absolute;
+        z-index: 20;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        max-height: 320px;
+        margin-top: 0;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
+    }
+}
 .admin-checks { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
 .admin-check {
     display: inline-flex;

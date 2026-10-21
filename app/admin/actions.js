@@ -9,7 +9,18 @@ import {
   createSessionCookieValue,
   verifySessionCookieValue,
 } from "@/lib/auth";
-import { slugify, directImageUrl, validateUrl, videoUrl, isSupabaseImage, isDriveUrl } from "@/lib/format";
+import {
+  slugify,
+  directImageUrl,
+  validateUrl,
+  videoUrl,
+  isSupabaseImage,
+  isDriveUrl,
+  priceNumber,
+  matchProduct,
+  parseRate,
+  commissionAmount,
+} from "@/lib/format";
 import { notifyRep } from "@/lib/data";
 
 function internalError(message) {
@@ -591,17 +602,100 @@ function nairaText(n) {
   return "₦" + Math.round(Number(n) || 0).toLocaleString("en-NG");
 }
 
+function rateText(rate) {
+  return rate == null ? "" : ` (${rate}%)`;
+}
+
+// Postgres reports 42703 for an unknown column; PostgREST — which the
+// Supabase client actually talks to — reports PGRST204 instead.
+const MISSING_COLUMN_CODES = new Set(["42703", "PGRST204", "42P01"]);
+
+function isMissingColumnError(error, column) {
+  if (!error) return false;
+  if (MISSING_COLUMN_CODES.has(error.code)) return true;
+  const message = String(error.message || "").toLowerCase();
+  return message.includes(String(column).toLowerCase()) && message.includes("column");
+}
+
+// Write a payout row. `commission_rate` arrives with migration
+// 0008_payout_commission_rate — if that migration has not been applied yet
+// the column is rejected, so retry without it instead of failing the order.
+async function writePayout(payload, id) {
+  const attempt = async (row) => {
+    const query =
+      id > 0
+        ? supabase().from("payouts").update(row).eq("id", id)
+        : supabase().from("payouts").insert(row);
+    const { data, error } = await query.select("id").single();
+    return { data, error };
+  };
+
+  let result = await attempt(payload);
+  if (result.error && "commission_rate" in payload && isMissingColumnError(result.error, "commission_rate")) {
+    console.warn("[admin] savePayout: commission_rate column missing — run migration 0008.");
+    const { commission_rate, ...withoutRate } = payload;
+    result = await attempt(withoutRate);
+  }
+  return result;
+}
+
 export async function savePayoutAction(prevState, formData) {
   if (!(await requireAdmin())) return internalError("Session expired. Log in again.");
 
   const id = Number(formData.get("id")) || 0;
   const repId = String(formData.get("rep_id") || "").trim();
-  const product = String(formData.get("product") || "").trim();
   if (!repId) return internalError("Choose the rep for this order.");
-  if (!product) return internalError("Product is required.");
 
-  const orderAmount = Number(formData.get("order_amount")) || 0;
-  const commission = Number(formData.get("commission")) || 0;
+  // "catalogue" -> the name must match a catalogue product exactly (case-insensitive).
+  // "custom"    -> the owner ticked "Use a custom product name"; the text is used verbatim.
+  const productMode = String(formData.get("product_mode") || "catalogue").trim().toLowerCase();
+  let product = String(formData.get("product") || "").trim();
+  if (!product) return internalError("Choose a product.");
+
+  let productRow = null;
+  if (productMode !== "custom") {
+    const { data: catalogue } = await supabase()
+      .from("products")
+      .select("id,name,price")
+      .order("id", { ascending: true });
+    productRow = matchProduct(catalogue, product);
+    if (!productRow) {
+      return internalError(
+        `“${product}” is not in the catalogue. Pick the product from the list, or tick “Use a custom product name”.`
+      );
+    }
+    // Store the catalogue's exact spelling, not whatever the browser sent.
+    product = String(productRow.name).trim();
+  }
+
+  let orderAmount = Number(formData.get("order_amount")) || 0;
+  // Safety net: a catalogue product with an empty amount takes the catalogue price.
+  if (!orderAmount && productRow) {
+    const price = priceNumber(productRow);
+    if (price && price > 0) orderAmount = price;
+  }
+
+  const postedCommission = Number(formData.get("commission")) || 0;
+  // "auto"   -> derive the commission from the rep's rate (authoritative).
+  // "manual" -> the owner overrode it in the form; keep their number.
+  const commissionMode = String(formData.get("commission_mode") || "auto").trim().toLowerCase();
+
+  // The rate always comes from the database, never from the browser.
+  const { data: rep } = await supabase()
+    .from("sales_reps")
+    .select("rep_id,name,commission_rate")
+    .ilike("rep_id", repId)
+    .maybeSingle();
+  const rate = parseRate(rep?.commission_rate);
+
+  const computed = commissionAmount(orderAmount, rate);
+  const commission =
+    commissionMode === "manual"
+      ? postedCommission
+      : computed == null
+        ? postedCommission // rep has no rate -> keep whatever was typed
+        : computed;
+
   let status = String(formData.get("status") || "pending").trim().toLowerCase();
   if (!PAYOUT_STATUSES.includes(status)) status = "pending";
   const date =
@@ -612,6 +706,7 @@ export async function savePayoutAction(prevState, formData) {
     product,
     order_amount: orderAmount,
     commission,
+    commission_rate: rate,
     status,
     date,
   };
@@ -627,7 +722,7 @@ export async function savePayoutAction(prevState, formData) {
         .maybeSingle();
       if (!old) return internalError("That order no longer exists.");
 
-      const { error } = await supabase().from("payouts").update(payload).eq("id", id);
+      const { error } = await writePayout(payload, id);
       if (error) throw error;
 
       const wasClosed = String(old.status || "").toLowerCase() === "closed";
@@ -636,22 +731,18 @@ export async function savePayoutAction(prevState, formData) {
           repId,
           "deal_closed",
           "Deal closed",
-          `${product} · Commission ${nairaText(commission)} confirmed.`,
+          `${product} · Commission ${nairaText(commission)} confirmed${rateText(rate)}.`,
           id
         );
       }
     } else {
-      const { data, error } = await supabase()
-        .from("payouts")
-        .insert(payload)
-        .select("id")
-        .single();
+      const { data, error } = await writePayout(payload, 0);
       if (error) throw error;
       await notifyRep(
         repId,
         "new_order",
         "New order recorded",
-        `${product} · Order ${nairaText(orderAmount)} · Commission ${nairaText(commission)}`,
+        `${product} · Order ${nairaText(orderAmount)} · Commission ${nairaText(commission)}${rateText(rate)}`,
         data?.id ?? null
       );
     }

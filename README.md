@@ -30,7 +30,7 @@ Bespoke gifts storefront — customised jewellery, acrylic frames/prints, brand 
 - Passphrase-gated (server-side) CRUD for all content types:
   - Settings (brand, hero, section labels, category images, footer, commission line)
   - Products, Sales reps, Orders, Testimonials, Portfolio, Why Us, How to Order, FAQ
-- **Orders tab** — record an order for a rep (sends them a "New order" notification) and move deals `pending → closed → paid` (closing sends a one-time "Deal closed" notification)
+- **Orders tab** — record an order for a rep (sends them a "New order" notification) and move deals `pending → closed → paid` (closing sends a one-time "Deal closed" notification). The product is picked from a searchable catalogue dropdown (the name always matches the catalogue exactly, with an explicit "custom product name" option); the order amount fills in from the catalogue price and the commission is calculated automatically from the rep's commission rate — both can be overridden by hand.
 - Searchable icon picker for product, portfolio and Why-Us icons
 - Per-rep invite/share panel and PIN reset
 - **Image uploads** — pick a file and it's downscaled in the browser, stored in a public Supabase Storage bucket, and served via `next/image` (automatic resize + WebP/AVIF). A paste-a-link field remains for any external URL
@@ -77,6 +77,7 @@ SQL is kept in `supabase/migrations/` and versioned in git:
 | `0005_image_storage.sql` | Public `images` Storage bucket + read policy (for uploaded/migrated images) |
 | `0006_backfill_unique_product_slugs.sql` | De-duplicates any remaining `products.slug` collisions (idempotent) |
 | `0007_notifications.sql` | `notifications` table (rep order/deal alerts) + index + RLS |
+| `0008_payout_commission_rate.sql` | `payouts.commission_rate` (the % used for each order) |
 
 Apply them in order, either in the **Supabase Dashboard → SQL Editor** (paste and run), or with the CLI after `supabase link`:
 
@@ -174,7 +175,7 @@ Preserved URL params: `/?p=<slug>` (deep link), `?ref=<rep_id>` (referral), `?cl
 ├── lib/
 │   ├── supabase.js                 # Server-side Supabase client (service role)
 │   ├── data.js                     # Data-access helpers
-│   ├── format.js                   # slugify, price formatting, image/video URL helpers
+│   ├── format.js                   # slugify, price formatting, commission math, image/video URL helpers
 │   ├── site.js                     # Site defaults, SITE_URL, WhatsApp link builder
 │   ├── taxonomy.js / taxonomy.json # Category / subgroup / product-type taxonomy
 │   ├── auth.js                     # Admin session cookie (HMAC-signed)

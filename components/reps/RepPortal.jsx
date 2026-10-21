@@ -1116,7 +1116,12 @@ export function RepPortal({ products, commissionRule }) {
                           <tr key={i}>
                             <td data-label="Product">{r.product}</td>
                             <td data-label="Order amount">{naira(parseFloat(r.order_amount) || 0)}</td>
-                            <td data-label="Commission">{naira(parseFloat(r.commission) || 0)}</td>
+                            <td data-label="Commission">
+                              {naira(parseFloat(r.commission) || 0)}
+                              {r.commission_rate != null && r.commission_rate !== ""
+                                ? ` (${Number(r.commission_rate)}%)`
+                                : ""}
+                            </td>
                             <td data-label="Status">
                               <span
                                 className={`rep-status ${paid ? "paid" : closed ? "closed" : "pending"}`}

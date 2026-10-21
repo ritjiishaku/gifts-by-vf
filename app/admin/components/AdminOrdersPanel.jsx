@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useActionState, useMemo } from "react";
+import { useState, useActionState, useMemo, useEffect } from "react";
 import { savePayoutAction, deletePayoutAction } from "../actions";
 import { useAdminForm } from "./useAdminForm";
+import { ProductPicker } from "./ProductPicker";
+import { parseRate, commissionAmount, priceNumber, matchProduct } from "@/lib/format";
 
 const STATUS_LABELS = { pending: "Pending", closed: "Closed", paid: "Paid" };
 
@@ -61,12 +63,19 @@ export function AdminOrdersPanel({ payouts, reps, products }) {
       </p>
 
       {editing ? (
-        <AdminPayoutForm row={editing} reps={reps} products={products} onClose={() => setEditing(null)} />
+        <AdminPayoutForm
+          key={editing.id || "new"}
+          row={editing}
+          reps={reps}
+          products={products}
+          onClose={() => setEditing(null)}
+        />
       ) : null}
 
       <div className="admin-list">
         {rows.map((p) => {
           const status = String(p.status || "pending").toLowerCase();
+          const rate = p.commission_rate;
           return (
             <div key={p.id} className="admin-row">
               <div className="admin-row-info">
@@ -82,6 +91,7 @@ export function AdminOrdersPanel({ payouts, reps, products }) {
                 </span>
                 <span className="admin-tag">
                   Commission {Number(p.commission || 0).toLocaleString("en-NG")} ₦
+                  {rate != null && rate !== "" ? ` (${Number(rate)}%)` : ""}
                 </span>
                 <span className={`admin-status ${status}`}>{STATUS_LABELS[status] || status}</span>
               </div>
@@ -132,6 +142,58 @@ function AdminPayoutForm({ row, reps, products, onClose }) {
 
   const num = (v) => (v === null || v === undefined ? "" : String(v));
 
+  // ── Controlled inputs ────────────────────────────────────────────────────
+  const [repId, setRepId] = useState(row?.rep_id || "");
+  const [product, setProduct] = useState(row?.product || "");
+  const [amount, setAmount] = useState(num(row?.order_amount));
+  // null = follow the rep's rate; a string = the owner typed their own figure.
+  const [manualCommission, setManualCommission] = useState(null);
+  // True once the owner types their own order amount — never overwrite it.
+  const [amountManual, setAmountManual] = useState(Boolean(row?.id));
+  // Custom names are opt-in. An old order whose product is no longer in the
+  // catalogue opens in custom mode so it still saves.
+  const [custom, setCustom] = useState(() => {
+    const name = String(row?.product || "").trim();
+    if (!name) return false;
+    return !matchProduct(products, name);
+  });
+
+  const rep = useMemo(
+    () => (reps || []).find((r) => String(r.rep_id) === repId) || null,
+    [reps, repId]
+  );
+  const rate = parseRate(rep?.commission_rate);
+
+  // The catalogue product the current name refers to (exact match only).
+  const matched = useMemo(
+    () => (custom ? null : matchProduct(products, product)),
+    [custom, products, product]
+  );
+  const cataloguePrice = matched ? priceNumber(matched) : null;
+
+  const amountNum = Number(amount);
+  const hasAmount =
+    String(amount).trim() !== "" && Number.isFinite(amountNum) && amountNum > 0;
+  const autoCommission = rate != null && hasAmount ? commissionAmount(amountNum, rate) : null;
+
+  // An emptied commission field means "no override" — fall back to the auto
+  // figure. A deliberate "0" still counts as an override.
+  const isOverridden =
+    manualCommission !== null && String(manualCommission).trim() !== "";
+  const commissionValue = isOverridden
+    ? manualCommission
+    : autoCommission == null
+      ? ""
+      : String(autoCommission);
+
+  // Fill the order amount from the catalogue price whenever the picked
+  // product changes — unless the owner typed their own amount.
+  useEffect(() => {
+    if (amountManual) return;
+    if (cataloguePrice == null || cataloguePrice <= 0) return;
+    setAmount(String(cataloguePrice));
+  }, [cataloguePrice, amountManual]);
+
   return (
     <div
       className="admin-modal"
@@ -141,6 +203,12 @@ function AdminPayoutForm({ row, reps, products, onClose }) {
     >
       <form action={formAction} className="admin-modal-panel admin-modal-panel-narrow" onChange={markDirty}>
         <input type="hidden" name="id" value={row?.id || ""} />
+        {/* "catalogue" -> the name must match a catalogue product exactly.
+            "custom"    -> the owner ticked "Use a custom product name". */}
+        <input type="hidden" name="product_mode" value={custom ? "custom" : "catalogue"} />
+        {/* "auto"   -> derive the commission from the rep's rate.
+            "manual" -> the owner overrode it in the form. */}
+        <input type="hidden" name="commission_mode" value={isOverridden ? "manual" : "auto"} />
         <div className="admin-modal-head">
           <h2>{isNew ? "Record order" : "Edit order"}</h2>
           <button
@@ -156,7 +224,16 @@ function AdminPayoutForm({ row, reps, products, onClose }) {
         <div className="admin-form-grid">
           <label className="admin-field admin-field-wide">
             Rep *
-            <select name="rep_id" defaultValue={row?.rep_id || ""} required>
+            <select
+              name="rep_id"
+              value={repId}
+              onChange={(e) => {
+                setRepId(e.target.value);
+                // A new rep means a new rate — drop any manual override.
+                setManualCommission(null);
+              }}
+              required
+            >
               <option value="" disabled>
                 Choose a rep…
               </option>
@@ -166,24 +243,25 @@ function AdminPayoutForm({ row, reps, products, onClose }) {
                 </option>
               ))}
             </select>
+            {rep ? (
+              <span className="admin-field-hint">
+                {rate != null
+                  ? `Commission rate: ${rate}%`
+                  : `⚠ ${rep.name || rep.rep_id} has no commission rate set — enter the commission manually.`}
+              </span>
+            ) : null}
           </label>
 
-          <label className="admin-field admin-field-wide">
-            Product *
-            <input
-              type="text"
-              name="product"
-              list="admin-order-products"
-              defaultValue={row?.product || ""}
-              placeholder="Product name"
-              required
-            />
-            <datalist id="admin-order-products">
-              {(products || []).map((p) => (
-                <option key={p.id} value={p.name} />
-              ))}
-            </datalist>
-          </label>
+          <ProductPicker
+            products={products}
+            value={product}
+            onChange={setProduct}
+            custom={custom}
+            onCustomChange={(next) => {
+              setCustom(next);
+              if (next) setManualCommission(null);
+            }}
+          />
 
           <label className="admin-field">
             Order amount (₦)
@@ -193,9 +271,35 @@ function AdminPayoutForm({ row, reps, products, onClose }) {
               min="0"
               step="any"
               inputMode="decimal"
-              defaultValue={num(row?.order_amount)}
+              value={amount}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                setAmountManual(true);
+              }}
               placeholder="e.g. 25000"
             />
+            {cataloguePrice != null ? (
+              <span className="admin-field-hint">
+                {amountManual ? (
+                  <>
+                    Catalogue price: ₦{cataloguePrice.toLocaleString("en-NG")}{" "}
+                    <button
+                      type="button"
+                      className="admin-link-btn"
+                      onClick={() => {
+                        setAmount(String(cataloguePrice));
+                        setAmountManual(false);
+                        markDirty();
+                      }}
+                    >
+                      Use catalogue price
+                    </button>
+                  </>
+                ) : (
+                  "Filled from the catalogue price."
+                )}
+              </span>
+            ) : null}
           </label>
 
           <label className="admin-field">
@@ -206,9 +310,33 @@ function AdminPayoutForm({ row, reps, products, onClose }) {
               min="0"
               step="any"
               inputMode="decimal"
-              defaultValue={num(row?.commission)}
-              placeholder="e.g. 2500"
+              value={commissionValue}
+              onChange={(e) => setManualCommission(e.target.value)}
+              placeholder={rate != null ? `auto: ${rate}%` : "enter manually"}
             />
+            {rate != null ? (
+              <span className="admin-field-hint">
+                {isOverridden ? (
+                  <>
+                    Auto would be ₦{(autoCommission ?? 0).toLocaleString("en-NG")} ({rate}%) —{" "}
+                    <button
+                      type="button"
+                      className="admin-link-btn"
+                      onClick={() => {
+                        setManualCommission(null);
+                        markDirty();
+                      }}
+                    >
+                      Use auto ({rate}%)
+                    </button>
+                  </>
+                ) : hasAmount ? (
+                  `${rate}% of ₦${amountNum.toLocaleString("en-NG")} = ₦${(autoCommission ?? 0).toLocaleString("en-NG")}`
+                ) : (
+                  "Enter the order amount to calculate the commission."
+                )}
+              </span>
+            ) : null}
           </label>
 
           <label className="admin-field">
