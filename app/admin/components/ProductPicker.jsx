@@ -121,7 +121,13 @@ export function ProductPicker({
 
           <label className="admin-field" style={{ marginTop: "10px" }}>
             <span className="admin-field-label">Category</span>
-            <select value={category} onChange={(e) => setCategory(e.target.value)}>
+            <select
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setOpen(true);
+              }}
+            >
               <option value="all">All categories</option>
               {TAXONOMY.map((c) => (
                 <option key={c.name} value={c.name}>
