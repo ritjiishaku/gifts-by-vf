@@ -3020,11 +3020,8 @@ body.lightbox-open { overflow: hidden; }
 @media (min-width: 641px) and (max-width: 720px) {
     .admin-modal-panel-narrow .admin-form-grid { grid-template-columns: minmax(0, 1fr); }
 }
-/* Category pills match the mobile behaviour wherever the row cannot fit
-   every chip — wrap instead of hiding categories behind a hidden scrollbar. */
-@media (max-width: 900px) {
-    .admin-product-filters { flex-wrap: wrap; overflow-x: visible; row-gap: 8px; }
-}
+/* Category pills wrap at every width (see .admin-product-filters) — the
+   constraint is the modal column, not the viewport. */
 .admin-field { display: block; color: var(--text-light); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.4px; }
 .admin-field input,
 .admin-field textarea,
@@ -3129,18 +3126,17 @@ body.lightbox-open { overflow: hidden; }
    641px up it becomes an overlay so the rest of the form does not jump. */
 .admin-product-picker { position: relative; margin-top: 5px; }
 .admin-product-input { margin-top: 0; min-height: 44px; }
+/* The chips always wrap instead of scrolling sideways. The order modal is
+   only ~480px wide on desktop, so the five categories never fit on one row
+   — a hidden scrollbar would leave 2-3 of them off-screen with no cue. */
 .admin-product-filters {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 10px;
-    padding-bottom: 4px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
 }
-.admin-product-filters::-webkit-scrollbar { display: none; }
 .admin-product-chip {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
     min-height: 40px;
     padding: 8px 14px;
     border: 1px solid var(--border-light);
@@ -3151,7 +3147,8 @@ body.lightbox-open { overflow: hidden; }
     font-size: 0.78rem;
     font-weight: 600;
     letter-spacing: normal;
-    white-space: nowrap;
+    text-align: center;
+    white-space: normal;
     cursor: pointer;
     touch-action: manipulation; /* stop double-tap-zoom from eating the tap */
     -webkit-tap-highlight-color: transparent;
@@ -3686,14 +3683,8 @@ body.lightbox-open { overflow: hidden; }
     .admin-checks { gap: 10px; }
     .admin-check { flex: 1 1 auto; justify-content: center; }
 
-    /* Category pills: a hidden scrollbar on a single row hid 2-3 categories
-       off-screen with no cue they existed. Wrap them onto multiple lines
-       instead so every category is always visible and tappable. */
-    .admin-product-filters {
-        flex-wrap: wrap;
-        overflow-x: visible;
-        row-gap: 8px;
-    }
+    /* Category pills keep the wrapped rows from the base rule; they only
+       need a bigger tap target on touch screens. */
     .admin-product-chip { min-height: 44px; padding: 10px 16px; font-size: 0.82rem; }
 
     /* The "custom product name" checkbox: a full-width card so the whole
