@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Icon, WaIcon } from "./icons";
 import { openLightbox } from "./Lightbox";
 import { SiteImage } from "./SiteImage";
@@ -26,12 +26,23 @@ export function orderMessage(productName, price, ref) {
   return msg;
 }
 
-export function ProductCard({ p, pid, settings, taxonomy, ref }) {
+export function ProductCard({ p, pid, settings, taxonomy, referral }) {
   const [storeRef, setStoreRef] = useState(getReferral);
+  const [shareStatus, setShareStatus] = useState("");
+  const shareTimer = useRef(null);
   useEffect(() => {
     setStoreRef(getReferral());
     return subscribeReferral(() => setStoreRef(getReferral()));
   }, []);
+
+  useEffect(() => () => clearTimeout(shareTimer.current), []);
+
+  const handleShare = (event) => {
+    copyProductLink(event);
+    setShareStatus("Link copied");
+    clearTimeout(shareTimer.current);
+    shareTimer.current = setTimeout(() => setShareStatus(""), 2000);
+  };
 
   let imageUrl = String(p.image_url || "").trim();
   let video = videoUrl(p.video_url);
@@ -53,7 +64,7 @@ export function ProductCard({ p, pid, settings, taxonomy, ref }) {
   const soldOut = isSoldOut(p);
   const badgeLabel = soldOut ? String(p.stock_label || "").trim() || "Sold Out" : category;
   const orderText = soldOut ? "Request a custom quote" : "Order this gift";
-  const activeRef = ref || storeRef;
+  const activeRef = referral || storeRef;
   const waHref = waLink(settings, orderMessage(p.name, price, activeRef));
 
   const typeVisible =
@@ -159,11 +170,14 @@ export function ProductCard({ p, pid, settings, taxonomy, ref }) {
             data-slug={slug}
             aria-label={`Copy link to ${p.name}`}
             title="Copy product link"
-            onClick={copyProductLink}
+            onClick={handleShare}
           >
             <Icon name="link" />
           </button>
         </div>
+        <span className="visually-hidden" role="status" aria-live="polite">
+          {shareStatus}
+        </span>
       </div>
     </div>
   );

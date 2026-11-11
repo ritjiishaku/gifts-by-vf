@@ -45,7 +45,7 @@ export async function generateMetadata({ params }) {
         },
       ]
     : undefined;
-  const description = product.description || "";
+  const description = product.description || undefined;
   const title = product.name;
   return {
     title,
@@ -54,7 +54,7 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title,
       description,
-      type: "website",
+      type: "product",
       url: `/product/${resolvedSlug}`,
       images: ogImages,
     },
@@ -124,12 +124,12 @@ export default async function ProductPage({ params }) {
       const pc = taxonomyCategoryForProduct(p, TAXONOMY)?.name;
       return category ? pc === category : true;
     })
-    .slice()
     .sort(
       (a, b) =>
         Number(isFeatured(b)) - Number(isFeatured(a)) ||
         (parseInt(a.display_order, 10) || 999) - (parseInt(b.display_order, 10) || 999)
-    );
+    )
+    .slice(0, 6);
 
   const typeVisible =
     productType && productType.trim().toLowerCase() !== String(product.name).trim().toLowerCase();
@@ -236,7 +236,7 @@ export default async function ProductPage({ params }) {
               </div>
               <div className="products-grid">
                 {related.map((p) => (
-                  <ProductCard key={p.id} p={p} pid={p.id} settings={settings} taxonomy={TAXONOMY} ref={null} />
+                  <ProductCard key={p.id} p={p} pid={p.id} settings={settings} taxonomy={TAXONOMY} referral={null} />
                 ))}
               </div>
               <div className="product-catalogue-link">

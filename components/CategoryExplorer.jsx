@@ -13,13 +13,24 @@ import { taxonomyCategoryForProduct } from "@/lib/taxonomy";
 import { SiteImage } from "./SiteImage";
 
 export function CategoryExplorer({ taxonomy, products, settings }) {
-  if (!Array.isArray(taxonomy) || taxonomy.length !== 4) return null;
+  const heroCategories = (Array.isArray(taxonomy) ? taxonomy : []).filter(
+    (category) => category.showInHero !== false
+  );
+  if (!heroCategories.length) return null;
 
-  const handleJump = () => {
+  const handleJump = (event) => {
     window.dispatchEvent(new CustomEvent("vf:clear-filters"));
+    // Allow hash navigation to complete without racing filter state updates.
+    event?.preventDefault?.();
+    const target = event?.currentTarget?.getAttribute("href");
+    if (target && target.startsWith("#")) {
+      requestAnimationFrame(() => {
+        window.location.hash = target;
+      });
+    }
   };
 
-  return taxonomy.map((category, index) => {
+  return heroCategories.map((category, index) => {
     const categoryProducts = (products || []).filter(
       (product) => taxonomyCategoryForProduct(product)?.name === category.name
     );
@@ -77,6 +88,7 @@ export function CategoryExplorer({ taxonomy, products, settings }) {
               alt=""
               sizes="(min-width: 768px) 25vw, 50vw"
               legacyWidths={[400, 800, 1200]}
+              priority
               onError={onImgError}
             />
           ) : null}

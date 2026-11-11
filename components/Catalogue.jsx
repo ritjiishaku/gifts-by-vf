@@ -121,6 +121,9 @@ export function Catalogue({ products, taxonomy, settings }) {
 
   useEffect(() => setShownByGroup({}), [filtered]);
 
+  // Cancel any pending debounced search when the catalogue unmounts.
+  useEffect(() => () => clearTimeout(searchTimer.current), []);
+
   const clearFilters = useCallback(() => {
     setActiveCategory("all");
     setActiveSubcategory("all");
@@ -224,7 +227,7 @@ export function Catalogue({ products, taxonomy, settings }) {
   };
 
   const categories = Array.isArray(taxonomy) && taxonomy.length ? taxonomy : [];
-  const grouped = categories.length === 4;
+  const grouped = categories.length > 0;
 
   const renderCard = (product, pid) => (
     <ProductCard
@@ -233,7 +236,7 @@ export function Catalogue({ products, taxonomy, settings }) {
       pid={pid}
       settings={settings}
       taxonomy={taxonomy}
-      ref={ref}
+      referral={ref}
     />
   );
 
@@ -322,7 +325,7 @@ export function Catalogue({ products, taxonomy, settings }) {
       if (filtered.length === 0) {
         return emptyState("No products match your current search.");
       }
-      const shown = Math.min(PRODUCT_LIMIT, filtered.length);
+      const shown = Math.min(shownByGroup.flat || PRODUCT_LIMIT, filtered.length);
       const remaining = filtered.length - shown;
       sections = (
         <>
@@ -334,7 +337,12 @@ export function Catalogue({ products, taxonomy, settings }) {
               <button
                 type="button"
                 className="load-more"
-                onClick={() => setShownByGroup((prev) => ({ ...prev, flat: PRODUCT_LIMIT }))}
+                onClick={() =>
+                  setShownByGroup((prev) => ({
+                    ...prev,
+                    flat: (prev.flat || PRODUCT_LIMIT) + PRODUCT_LIMIT,
+                  }))
+                }
               >
                 {`Show more (${remaining} more)`}
               </button>
@@ -417,13 +425,13 @@ export function Catalogue({ products, taxonomy, settings }) {
           <header className="catalogue-category-heading">
             <div className="category-heading-copy">
               <p className="category-section-kicker">COLLECTION 0{index + 1}</p>
-              <h2>{category.name}</h2>
+              <h3>{category.name}</h3>
               <p>{category.description || ""}</p>
               <span className="category-section-count">{countLabel}</span>
             </div>
             <div className="category-heading-visual" aria-hidden="true">
-              <span>0{index + 1}</span>
-              <i>GIFT COLLECTION</i>
+              <span className="category-heading-visual-number">0{index + 1}</span>
+              <span className="category-heading-visual-note">GIFT COLLECTION</span>
             </div>
           </header>
           <div className="catalogue-category-content">{content}</div>
@@ -474,9 +482,11 @@ export function Catalogue({ products, taxonomy, settings }) {
         <p className="section-label" id="products-label">{settings.products_label}</p>
         <h2 className="section-title" id="products-title">{settings.products_title}</h2>
         <p className="section-desc" id="products-desc">{settings.products_desc}</p>
-        <div className="category-selection" id="category-selection" role="status" aria-live="polite" hidden={!selectionText}>
-          <span id="category-selection-text">{selectionText}</span>
-        </div>
+        {selectionText ? (
+          <div className="category-selection" id="category-selection" role="status" aria-live="polite">
+            <span id="category-selection-text">{selectionText}</span>
+          </div>
+        ) : null}
       </div>
       <div className="catalogue-controls fade-in">
         <div className="catalogue-search">

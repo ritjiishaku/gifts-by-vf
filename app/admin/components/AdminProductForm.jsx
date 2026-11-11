@@ -2,6 +2,7 @@
 
 import { useState, useActionState } from "react";
 import { saveProductAction } from "../actions";
+import { TAXONOMY } from "@/lib/taxonomy";
 import { IconPicker } from "./IconPicker";
 import { ImageField } from "./ImageField";
 import { AdminThumb } from "./AdminThumb";
@@ -69,7 +70,17 @@ export function AdminProductForm({ product, onClose }) {
           </label>
           <label className="admin-field">
             Category
-            <input name="category" defaultValue={values?.category ?? product.category ?? ""} placeholder="e.g. Customized Jewelry" />
+            <input
+              name="category"
+              list="admin-category-options"
+              defaultValue={values?.category ?? product.category ?? ""}
+              placeholder="e.g. Books, Customized Jewelry"
+            />
+            <datalist id="admin-category-options">
+              {TAXONOMY.map((category) => (
+                <option key={category.name} value={category.name} />
+              ))}
+            </datalist>
           </label>
           <label className="admin-field">
             Subcategory

@@ -1,22 +1,16 @@
-import { siteImageUrl, isSupabaseImage } from "@/lib/format";
+import { siteImageUrl } from "@/lib/format";
 import { SiteImage } from "./SiteImage";
 import { CategoryExplorer } from "./CategoryExplorer";
 
 export function Hero({ settings, products, taxonomy }) {
   const heroImage = siteImageUrl(settings.hero_image_url);
-  const hasExplorer = Array.isArray(taxonomy) && taxonomy.length === 4;
-  // next/image (Supabase) preloads itself via `priority`; only legacy hosts need
-  // an explicit <link rel="preload"> to start the download early (avoids LCP delay).
-  const needsPreload = heroImage && !isSupabaseImage(heroImage);
+  const hasExplorer = Array.isArray(taxonomy) && taxonomy.length > 0;
 
   return (
     <header
       id="hero"
       className={heroImage ? "hero fade-in has-owner-hero-image" : "hero fade-in"}
     >
-      {needsPreload ? (
-        <link rel="preload" as="image" href={heroImage} fetchPriority="high" />
-      ) : null}
       {heroImage ? (
         <SiteImage
           id="hero-background-image"
