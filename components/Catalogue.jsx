@@ -129,6 +129,21 @@ export function Catalogue({ products, taxonomy, settings }) {
     setActiveSubcategory("all");
     setActiveProductType("all");
     setSearchQuery("");
+    // Drop a #category-… deep link when the visitor clears the filter.
+    if (typeof window !== "undefined" && window.location.hash.startsWith("#category-")) {
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, []);
+
+  const scrollToCategory = useCallback((name) => {
+    const id = `category-${slugify(name)}`;
+    // Wait for the filtered grid to commit before scrolling to the section.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const target = document.getElementById(id) || document.getElementById("products");
+        target?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
   }, []);
 
   useEffect(() => {
@@ -136,6 +151,37 @@ export function Catalogue({ products, taxonomy, settings }) {
     window.addEventListener("vf:clear-filters", onClear);
     return () => window.removeEventListener("vf:clear-filters", onClear);
   }, [clearFilters]);
+
+  // Hero category cards and the Books spotlight ask the catalogue to focus a
+  // single collection, then scroll to it. Clearing is handled by the chip below
+  // the catalogue heading ("Show all gifts").
+  useEffect(() => {
+    const onSelect = (event) => {
+      const name = String(event?.detail?.category || "").trim();
+      if (!name) return;
+      setActiveCategory(name.toLowerCase());
+      setActiveSubcategory("all");
+      setActiveProductType("all");
+      setSearchQuery("");
+      if (typeof window !== "undefined") {
+        window.history.replaceState(null, "", `#category-${slugify(name)}`);
+      }
+      scrollToCategory(name);
+    };
+    window.addEventListener("vf:select-category", onSelect);
+    return () => window.removeEventListener("vf:select-category", onSelect);
+  }, [scrollToCategory]);
+
+  // Support shared /#category-books style links on first load.
+  useEffect(() => {
+    const match = window.location.hash.match(/^#category-(.+)$/);
+    if (!match) return;
+    const target = taxonomy.find((category) => slugify(category.name) === match[1]);
+    if (!target) return;
+    setActiveCategory(target.name.toLowerCase());
+    scrollToCategory(target.name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Preserved deep link: /?p=<slug>
   useEffect(() => {
@@ -483,8 +529,11 @@ export function Catalogue({ products, taxonomy, settings }) {
         <h2 className="section-title" id="products-title">{settings.products_title}</h2>
         <p className="section-desc" id="products-desc">{settings.products_desc}</p>
         {selectionText ? (
-          <div className="category-selection" id="category-selection" role="status" aria-live="polite">
-            <span id="category-selection-text">{selectionText}</span>
+          <div className="category-selection" id="category-selection">
+            <span id="category-selection-text" role="status" aria-live="polite">{selectionText}</span>
+            <button type="button" className="category-selection-clear" onClick={clearFilters}>
+              Show all gifts
+            </button>
           </div>
         ) : null}
       </div>

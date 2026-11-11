@@ -18,16 +18,12 @@ export function CategoryExplorer({ taxonomy, products, settings }) {
   );
   if (!heroCategories.length) return null;
 
-  const handleJump = (event) => {
-    window.dispatchEvent(new CustomEvent("vf:clear-filters"));
-    // Allow hash navigation to complete without racing filter state updates.
+  const handleJump = (event, category) => {
     event?.preventDefault?.();
-    const target = event?.currentTarget?.getAttribute("href");
-    if (target && target.startsWith("#")) {
-      requestAnimationFrame(() => {
-        window.location.hash = target;
-      });
-    }
+    // Let the catalogue focus this collection (and scroll after it renders).
+    window.dispatchEvent(
+      new CustomEvent("vf:select-category", { detail: { category: category.name } })
+    );
   };
 
   return heroCategories.map((category, index) => {
@@ -72,7 +68,7 @@ export function CategoryExplorer({ taxonomy, products, settings }) {
         href={`#${sectionId}`}
         data-category-jump={sectionId}
         aria-label={`View ${category.name} gifts`}
-        onClick={handleJump}
+        onClick={(event) => handleJump(event, category)}
       >
         <span className="category-card-media">
           <span

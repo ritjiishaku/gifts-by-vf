@@ -26,11 +26,10 @@ export function BooksSpotlight({ settings, products, taxonomy }) {
   const browseHref = `#category-${slugify(booksCategory.name)}`;
 
   const handleBrowse = (event) => {
-    window.dispatchEvent(new CustomEvent("vf:clear-filters"));
     event?.preventDefault?.();
-    requestAnimationFrame(() => {
-      window.location.hash = browseHref;
-    });
+    window.dispatchEvent(
+      new CustomEvent("vf:select-category", { detail: { category: booksCategory.name } })
+    );
   };
 
   return (
