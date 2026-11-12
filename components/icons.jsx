@@ -223,17 +223,3 @@ export function WaIcon() {
     </svg>
   );
 }
-
-export function WhatsAppIcon({ className = "icon", size }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      fill="currentColor"
-      style={size ? { width: size, height: size } : undefined}
-    >
-      {PATHS.whatsapp}
-    </svg>
-  );
-}

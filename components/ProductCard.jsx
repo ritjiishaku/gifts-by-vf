@@ -183,7 +183,7 @@ export function ProductCard({ p, pid, settings, taxonomy, referral }) {
   );
 }
 
-export async function copyProductLink(event) {
+async function copyProductLink(event) {
   const btn = event?.currentTarget;
   const slug = btn?.getAttribute("data-slug");
   const text = `${window.location.origin}/product/${encodeURIComponent(slug || "")}`;

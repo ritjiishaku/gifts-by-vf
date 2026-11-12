@@ -85,5 +85,3 @@ export function clearReferral() {
   } catch (e) {}
   setReferral(null);
 }
-
-export { REF_KEY, NEW_KEY };
