@@ -40,10 +40,6 @@ h1, h2, h3, h4 {
     vertical-align: -0.125em;
     fill: currentColor;
 }
-.product-icon .icon {
-    width: 1.8rem;
-    height: 1.8rem;
-}
 
 /* ── NAV ── */
 nav {
@@ -223,9 +219,6 @@ section { padding: 100px 24px; }
 .category-card-action-label { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
 .category-card-action b { font-size:1.1rem; font-weight:400; transition:transform .2s ease; }
 .category-card:hover .category-card-action b, .category-card:focus-visible .category-card-action b { transform:translateX(4px); }
-/* Staggered entrance (added on first render via .animate-in) */
-@keyframes category-card-rise { from { opacity: 0; transform: translateY(18px); } }
-.category-card.animate-in { animation: category-card-rise .55s cubic-bezier(.22,.61,.36,1) backwards; animation-delay: calc(var(--i, 0) * 90ms); }
 /* Tablet & up: roomier cards, side-by-side action row */
 @media (min-width: 601px) {
     .category-card-media { aspect-ratio: 1.4; }
@@ -240,7 +233,6 @@ section { padding: 100px 24px; }
     .category-card-media { aspect-ratio: 1.35; }
 }
 .category-selection { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px 15px; margin: 17px auto 0; color: #6f6147; font-size: .8rem; }
-.category-selection[hidden] { display: none; }
 .category-selection-clear {
     flex: 0 0 auto;
     min-height: 36px;
@@ -481,18 +473,6 @@ button:focus-visible,
     color: var(--text-light);
     letter-spacing: 0.5px;
 }
-
-.noscript-note {
-    margin-top: 20px;
-    padding: 14px 18px;
-    background: rgba(201,169,110,0.12);
-    border: 1px solid var(--gold-light);
-    color: var(--text);
-    font-size: 0.9rem;
-    line-height: 1.7;
-    border-radius: 4px;
-}
-.noscript-note a { color: var(--gold); font-weight: 600; }
 
 .products-grid {
     display: grid;
@@ -1474,13 +1454,7 @@ body {
     text-transform: uppercase;
     color: var(--text-light);
 }
-.rep-section, .admin-section { max-width: 900px; margin: 0 auto; padding: 36px 24px 60px; }
-.rep-panel {
-    background: rgba(255,255,255,0.9);
-    border: 1px solid var(--border-light);
-    box-shadow: var(--shadow);
-    border-radius: 18px;
-}
+.admin-section { max-width: 900px; margin: 0 auto; padding: 36px 24px 60px; }
 
 /* ── AUTH PAGES (admin login + rep login / PIN setup) ── */
 .page-shell {
@@ -1872,8 +1846,6 @@ body {
     background: rgba(255,255,255,0.97);
     backdrop-filter: blur(12px);
 }
-.rep-section h2 { color: var(--dark); margin-bottom: 10px; }
-.rep-section h3 { color: var(--dark); margin: 40px 0 6px; }
 .rep-hint { color: var(--text-light); font-size: 0.9rem; line-height: 1.7; margin-bottom: 20px; }
 .rep-product-count {
     margin: 0;
@@ -1934,8 +1906,6 @@ body {
 .rep-products-grid .rep-product { margin: 0; }
 .rep-table-scroll { width: 100%; overflow-x: auto; }
 .rep-form { display: flex; gap: 12px; max-width: 420px; margin-top: 20px; }
-.rep-form.rep-form-stacked { flex-direction: column; }
-.rep-form.rep-form-stacked input { width: 100%; box-sizing: border-box; }
 .rep-form input {
     flex: 1; padding: 12px 16px; border: 1px solid rgba(0,0,0,0.15);
     font-family: inherit; font-size: 1rem; border-radius: 4px;
@@ -2341,20 +2311,6 @@ body {
     font-size: 1.35rem;
     color: var(--dark);
 }
-.admin-lock-btn {
-    appearance: none;
-    background: none;
-    border: 1px solid rgba(0,0,0,0.2);
-    color: var(--text);
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    padding: 8px 14px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-.admin-lock-btn:hover { border-color: var(--gold); color: var(--gold); }
 .admin-pass-field { position: relative; flex: 1 1 auto; min-width: 0; width: 100%; box-sizing: border-box; }
 .admin-pass-field input { width: 100%; box-sizing: border-box; padding-right: 44px; }
 .admin-pass-toggle {
@@ -2376,113 +2332,6 @@ body {
     border-radius: 18px;
     margin-bottom: 28px;
 }
-.admin-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 20px;
-}
-.admin-card {
-    background: var(--white);
-    border: 1px solid var(--border-light);
-    padding: 26px;
-    text-decoration: none;
-    transition: all 0.3s;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-.admin-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow);
-    border-color: var(--gold-light);
-}
-.admin-card-icon { font-size: 1.8rem; line-height: 1; color: var(--gold); }
-.admin-card-icon .icon { width: 1.6rem; height: 1.6rem; }
-.admin-card h3 { margin: 0; font-size: 1.2rem; }
-.admin-card p { color: var(--text-light); font-size: 0.88rem; line-height: 1.6; flex: 1; }
-.admin-card-cta { color: var(--gold); font-weight: 600; font-size: 0.85rem; letter-spacing: 0.5px; text-transform: uppercase; }
-.admin-note {
-    margin-top: 20px;
-    padding: 16px 20px;
-    background: #fdf3d7;
-    color: #8a6d1a;
-    border: 1px solid #f0e0a8;
-    font-size: 0.9rem;
-    line-height: 1.7;
-}
-.admin-note code {
-    background: rgba(0,0,0,0.06);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: monospace;
-    font-size: 0.85rem;
-}
-.admin-colgroup { margin-bottom: 28px; }
-.admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-.admin-table th, .admin-table td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border-light); font-size: 0.88rem; }
-.admin-table th { color: var(--text-light); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; }
-.admin-table td { color: var(--text); }
-.admin-steps ol { margin: 0 0 20px 20px; color: var(--text); line-height: 1.9; font-size: 0.92rem; }
-.admin-steps code {
-    background: rgba(0,0,0,0.05);
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-family: monospace;
-    font-size: 0.82rem;
-}
-.admin-tip {
-    padding: 14px 18px;
-    background: var(--cream);
-    border-left: 3px solid var(--gold);
-    color: var(--text-light);
-    font-size: 0.88rem;
-    line-height: 1.7;
-}
-.admin-accordion {
-    border: 1px solid rgba(201, 169, 110, 0.25);
-    border-radius: 10px;
-    background: #fff;
-    box-shadow: 0 8px 20px rgba(28, 19, 8, 0.03);
-    margin-bottom: 12px;
-    overflow: hidden;
-}
-.admin-accordion summary {
-    list-style: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    padding: 14px 18px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--dark);
-    transition: color 0.2s ease, background 0.2s ease;
-}
-.admin-accordion summary:hover {
-    color: var(--gold);
-    background: rgba(201, 169, 110, 0.05);
-}
-.admin-accordion summary::-webkit-details-marker { display: none; }
-.admin-accordion summary::after {
-    content: '+';
-    font-size: 1.3rem;
-    color: var(--gold);
-    line-height: 1;
-    transition: transform 0.25s;
-}
-.admin-accordion[open] summary::after { transform: rotate(45deg); }
-.admin-accordion .accordion-body {
-    padding: 0 18px 18px;
-}
-.admin-accordion .accordion-body .admin-table { margin-top: 8px; }
-.admin-accordion ul.admin-tips-list {
-    margin: 10px 0 0 18px;
-    color: var(--text);
-    line-height: 1.8;
-    font-size: 0.9rem;
-}
-.admin-accordion ul.admin-tips-list li { margin-bottom: 10px; }
 @media (max-width: 1050px) {
     .rep-dashboard-layout { grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; }
     .rep-dashboard { padding-right: 24px; padding-left: 24px; }
@@ -2510,8 +2359,6 @@ body {
     .rep-header { padding: 12px 16px; gap: 8px; flex-wrap: nowrap; }
     .rep-header .nav-logo { font-size: 1.25rem; letter-spacing: 1px; }
     .rep-tag { letter-spacing: 0.5px; font-size: 0.66rem; }
-
-    .rep-section { padding: 40px 16px; }
 
     .rep-form { flex-direction: column; max-width: none; }
     .rep-form input { width: 100%; }
@@ -2665,7 +2512,6 @@ body.lightbox-open { overflow: hidden; }
 /* ── REDUCED MOTION (must come last to win the cascade) ── */
 @media (prefers-reduced-motion: reduce) {
     .product-play { animation: none; }
-    .category-card.animate-in { animation: none; }
     .category-card-media::after { display: none; }
     .fade-in { opacity: 1; transform: none; transition: none; }
     .hero.fade-in { transform: none; transition: none; }
@@ -2982,8 +2828,6 @@ body.lightbox-open { overflow: hidden; }
 @media (min-width: 641px) and (max-width: 720px) {
     .admin-modal-panel-narrow .admin-form-grid { grid-template-columns: minmax(0, 1fr); }
 }
-/* Category pills wrap at every width (see .admin-product-filters) — the
-   constraint is the modal column, not the viewport. */
 .admin-field { display: block; color: var(--text-light); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.4px; }
 .admin-field input,
 .admin-field textarea,
@@ -3088,35 +2932,6 @@ body.lightbox-open { overflow: hidden; }
    641px up it becomes an overlay so the rest of the form does not jump. */
 .admin-product-picker { position: relative; margin-top: 5px; }
 .admin-product-input { margin-top: 0; min-height: 44px; }
-/* The chips always wrap instead of scrolling sideways. The order modal is
-   only ~480px wide on desktop, so the five categories never fit on one row
-   — a hidden scrollbar would leave 2-3 of them off-screen with no cue. */
-.admin-product-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 10px;
-    width: 100%;
-}
-.admin-product-chip {
-    flex: 0 1 auto;
-    min-height: 40px;
-    padding: 8px 14px;
-    border: 1px solid var(--border-light);
-    border-radius: 40px;
-    background: #fff;
-    color: var(--text-light);
-    font: inherit;
-    font-size: 0.78rem;
-    font-weight: 600;
-    letter-spacing: normal;
-    text-align: center;
-    white-space: normal;
-    cursor: pointer;
-    touch-action: manipulation; /* stop double-tap-zoom from eating the tap */
-    -webkit-tap-highlight-color: transparent;
-}
-.admin-product-chip.is-active { border-color: var(--gold); background: rgba(198, 167, 100, 0.16); color: var(--text); }
 .admin-product-list {
     max-height: 46vh;
     overflow-y: auto;
@@ -3645,9 +3460,6 @@ body.lightbox-open { overflow: hidden; }
     .admin-form-grid .admin-field-wide { grid-column: 1 / -1; }
     .admin-checks { gap: 10px; }
     .admin-check { flex: 1 1 auto; justify-content: center; }
-
-    /* Category pills wrap at all widths (base rule). Bigger tap target on touch. */
-    .admin-product-chip { min-height: 44px; padding: 10px 16px; font-size: 0.82rem; flex: 0 1 auto; }
 
     /* The "custom product name" checkbox: a full-width card so the whole
        label is tappable and the box gets a comfortable touch target. */
