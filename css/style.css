@@ -292,47 +292,6 @@ section { padding: 100px 24px; }
 }
 
 /* Editorial category-led catalogue: every product lives in one collection section. */
-#products { padding-top: 88px; }
-#products-grid.products-grid { display:block; margin-top:0; }
-.catalogue-category-section { padding:58px 0 64px; scroll-margin-top:86px; border-top:1px solid rgba(94,75,46,.16); }
-.catalogue-category-section:first-child { border-top:0; }
-.catalogue-category-section.alternate { position:relative; isolation:isolate; }
-.catalogue-category-section.alternate::before { content:''; position:absolute; z-index:-1; inset:0 -24px; background:linear-gradient(110deg,rgba(242,235,222,.7),rgba(255,255,255,.16)); }
-.catalogue-category-heading { display:grid; grid-template-columns:minmax(0,1fr) minmax(200px,.52fr); align-items:center; gap:24px; padding-bottom:20px; }
-.category-heading-copy h3 { margin:0 0 8px; color:var(--dark); font-size:clamp(1.8rem,3.4vw,2.8rem); line-height:1.1; }
-.category-heading-copy>p:not(.category-section-kicker) { max-width:640px; margin:0; color:var(--text-light); font-size:.92rem; line-height:1.65; }
-.category-section-kicker,.subsection-kicker { margin:0 0 9px; color:#9b7c49; font-size:.68rem; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; }
-.category-section-count { display:inline-flex; margin-top:14px; padding:7px 11px; border:1px solid rgba(201,169,110,.44); border-radius:999px; background:rgba(255,255,255,.72); color:#725b37; font-size:.7rem; font-weight:600; }
-.category-heading-visual { justify-self:end; width:min(100%,310px); aspect-ratio:1.42; overflow:hidden; border-radius:12px 42px 12px 12px; background:linear-gradient(135deg,#e9dfcf,#c5a36c); box-shadow:0 16px 40px rgba(47,37,22,.12); }
-.category-heading-visual img { width:100%; height:100%; object-fit:cover; }
-.category-heading-placeholder { width:100%; height:100%; display:grid; place-items:center; padding:18px; background:linear-gradient(145deg,#ede5d8,#c5a36c); color:#fff; font-family:'Playfair Display',serif; font-size:clamp(1.1rem,2vw,1.6rem); text-align:center; letter-spacing:.6px; }
-.catalogue-category-section:nth-child(2) .category-heading-placeholder { background:linear-gradient(145deg,#5e665b,#b69a66); }
-.catalogue-category-section:nth-child(3) .category-heading-placeholder { background:linear-gradient(145deg,#303d39,#9c8055); }
-.catalogue-category-section:nth-child(4) .category-heading-placeholder { background:linear-gradient(145deg,#d8c6a9,#a5795c); }
-.catalogue-category-content { display:grid; gap:25px; }
-.catalogue-subsection { padding-top:24px; border-top:1px solid rgba(0,0,0,.075); }
-.catalogue-subsection-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin-bottom:5px; }
-.catalogue-subsection-heading h3 { margin:0; color:#292a25; font-family:'Playfair Display',serif; font-size:1.45rem; line-height:1.2; }
-.catalogue-subsection-heading>div>p:last-child { margin:5px 0 0; color:var(--text-light); font-size:.76rem; }
-.subsection-kicker { margin-bottom:5px; font-size:.6rem; letter-spacing:1.2px; }
-.catalogue-type-menu { max-width:55%; }
-.catalogue-type-menu summary { cursor:pointer; color:#80643b; font-size:.73rem; font-weight:700; text-align:right; }
-.catalogue-type-menu summary::marker { color:var(--gold); }
-.catalogue-type-menu>div { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:5px; margin-top:9px; }
-.catalogue-type-menu>div>span { padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.76); border:1px solid rgba(0,0,0,.06); color:#6f6a5d; font-size:.67rem; }
-.category-products-grid { grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:18px; margin-top:19px; }
-.category-enquiry-panel { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:19px 20px; margin-top:16px; border:1px solid rgba(201,169,110,.3); border-radius:10px; background:linear-gradient(110deg,rgba(255,255,255,.9),rgba(246,239,226,.75)); }
-.category-enquiry-panel>div { min-width:0; }
-.category-enquiry-panel strong { color:var(--dark); font-family:'Playfair Display',serif; font-size:1.12rem; }
-.category-enquiry-panel p { margin:4px 0 0; color:var(--text-light); font-size:.8rem; }
-.category-enquiry-panel .catalogue-type-menu { max-width:none; margin-top:11px; }
-.category-enquiry-panel .catalogue-type-menu summary { text-align:left; }
-.category-enquiry-panel .catalogue-type-menu>div { justify-content:flex-start; }
-.category-load-more { grid-column:1/-1; min-height:46px; justify-self:center; margin-top:6px; padding:12px 28px; border-radius:4px; font-size:.8rem; }
-.product-card-flags { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px; margin-bottom:7px; }
-.product-card-flags .product-type-label { margin:0; }
-.product-featured-label { color:#866737; font-size:.62rem; font-weight:700; letter-spacing:.9px; text-transform:uppercase; }
-
 #products-grid.products-grid { display:block; margin-top:0; }
 .catalogue-category-section { padding:58px 0 64px; scroll-margin-top:86px; border-top:1px solid rgba(94,75,46,.16); }
 .catalogue-category-section:first-child { border-top:0; }
@@ -340,8 +299,8 @@ section { padding: 100px 24px; }
 .category-heading-copy h3 { margin:0 0 8px; color:var(--dark); font-size:clamp(1.8rem,3.4vw,2.8rem); line-height:1.1; }
 .category-heading-copy>p:not(.category-section-kicker) { max-width:640px; margin:0; color:var(--text-light); font-size:.92rem; line-height:1.65; }
 .category-section-kicker,.subsection-kicker { margin:0 0 9px; color:#9b7c49; font-size:.68rem; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; }
-.category-section-count { justify-self:end; padding:8px 12px; border:1px solid rgba(201,169,110,.44); border-radius:999px; background:rgba(255,255,255,.72); color:#725b37; font-size:.7rem; font-weight:600; white-space:nowrap; }
-.category-heading-visual { justify-self:end; color:rgba(153,124,75,.28); font-family:'Playfair Display',serif; font-size:clamp(3.5rem,8vw,6rem); font-weight:600; line-height:.8; text-align:right; }
+.category-section-count { display:inline-flex; margin-top:14px; justify-self:end; padding:8px 12px; border:1px solid rgba(201,169,110,.44); border-radius:999px; background:rgba(255,255,255,.72); color:#725b37; font-size:.7rem; font-weight:600; white-space:nowrap; }
+.category-heading-visual { justify-self:end; width:min(100%,310px); aspect-ratio:1.42; overflow:hidden; border-radius:12px 42px 12px 12px; background:linear-gradient(135deg,#e9dfcf,#c5a36c); box-shadow:0 16px 40px rgba(47,37,22,.12); color:rgba(153,124,75,.28); font-family:'Playfair Display',serif; font-size:clamp(3.5rem,8vw,6rem); font-weight:600; line-height:.8; text-align:right; }
 .category-heading-visual-number { display:block; }
 .category-heading-visual-note { display:block; margin-top:12px; font-family:'Inter',sans-serif; font-size:.56rem; font-style:normal; font-weight:700; letter-spacing:1.4px; }
 .catalogue-category-content { display:grid; gap:25px; }
@@ -369,6 +328,33 @@ section { padding: 100px 24px; }
 .product-card-flags .product-type-label { margin:0; }
 .product-featured-label { color:#866737; font-size:.62rem; font-weight:700; letter-spacing:.9px; text-transform:uppercase; }
 
+/* ── CATALOGUE ── */
+#products {
+    background:
+        radial-gradient(ellipse at 85% 0%, rgba(201, 169, 110, 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 15% 45%, rgba(201, 169, 110, 0.06) 0%, transparent 60%),
+        var(--cream);
+    padding-top: 88px;
+    padding-bottom: 80px;
+}
+
+/* Page-header block: centre-aligned, with a visual separator below */
+.catalogue-header {
+    text-align: center;
+    padding-bottom: 48px;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 40px;
+}
+.catalogue-header .section-label { display: inline-block; }
+.catalogue-header .section-title { margin-left: auto; margin-right: auto; }
+.catalogue-header .section-desc {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 560px;
+}
+
+/* Responsive overrides for the catalogue — kept after the base rules above so
+   the mobile spacing actually wins the cascade. */
 @media(max-width:1024px){
     .catalogue-category-section { padding:48px 0 54px; }
     .category-products-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -394,31 +380,6 @@ section { padding: 100px 24px; }
     .category-enquiry-panel .product-order-btn { justify-content:center; min-height:46px; }
     .category-load-more { width:100%; }
     .category-selection { justify-content:flex-start; text-align:left; }
-}
-
-/* ── CATALOGUE ── */
-#products {
-    background:
-        radial-gradient(ellipse at 85% 0%, rgba(201, 169, 110, 0.12) 0%, transparent 50%),
-        radial-gradient(ellipse at 15% 45%, rgba(201, 169, 110, 0.06) 0%, transparent 60%),
-        var(--cream);
-    padding-top: 88px;
-    padding-bottom: 80px;
-}
-
-/* Page-header block: centre-aligned, with a visual separator below */
-.catalogue-header {
-    text-align: center;
-    padding-bottom: 48px;
-    border-bottom: 1px solid var(--border-light);
-    margin-bottom: 40px;
-}
-.catalogue-header .section-label { display: inline-block; }
-.catalogue-header .section-title { margin-left: auto; margin-right: auto; }
-.catalogue-header .section-desc {
-    margin-left: auto;
-    margin-right: auto;
-    max-width: 560px;
 }
 
 /* Control bar (search + filters + count) */
