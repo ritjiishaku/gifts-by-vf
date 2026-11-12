@@ -54,7 +54,10 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title,
       description,
-      type: "product",
+      // Next.js only accepts its OpenGraph type enum here ("website",
+      // "article", "book", "profile", "music.*", "video.*"). Passing
+      // "product" throws "Invalid OpenGraph type" at render time.
+      type: "website",
       url: `/product/${resolvedSlug}`,
       images: ogImages,
     },
