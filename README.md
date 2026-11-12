@@ -10,7 +10,7 @@ Bespoke gifts storefront — customised jewellery, acrylic frames/prints, brand 
 
 **Storefront (`/`)**
 - Server-rendered hero, catalogue, portfolio, Why Us, testimonials, How to Order and FAQ — content comes from Supabase, so the page is fully crawlable (not blank without JS)
-- Product catalogue with keyword search, category & occasion filters, price ranges and sorting
+- Product catalogue laid out as editorial collection sections, with keyword search, sorting, per-collection "show more", and hero category cards that jump straight to (and focus) a collection
 - Featured products highlighted within their catalogue group
 - **Featured Books spotlight** under the hero — markets faith/religious books for a partner church: up to 3 book cards, a WhatsApp enquiry CTA, a "browse all books" jump into the catalogue, and an optional partner attribution line (all editable in Admin → Settings → Books section). Books live in a 5th **Books** catalogue category (shown last) and are excluded from the hero category cards.
 - Direct **WhatsApp ordering** — every card opens a pre-filled chat with the product, price and sales-rep referral
@@ -149,7 +149,7 @@ Pages revalidate every 60 seconds, so CMS edits appear on the storefront within 
 | `/admin` | Client UI + server actions | Passphrase gate, then CMS |
 | `/api/reps` | Route handler | Rep login / first-time PIN setup (POST) and status check (GET) |
 
-Preserved URL params: `/?p=<slug>` (deep link), `?ref=<rep_id>` (referral), `?clearref=1` (clear referral).
+Preserved URL params: `/?p=<slug>` (deep link), `?ref=<rep_id>` (referral), `?clearref=1` (clear referral). Collection jumps also sync a shareable `/#category-<slug>` hash.
 
 ---
 
