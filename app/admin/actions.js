@@ -102,11 +102,45 @@ async function removeStorageImage(imageUrl) {
   }
 }
 
+function isPrivateHostname(hostname) {
+  const host = String(hostname || "").toLowerCase();
+  if (!host) return true;
+  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".internal")) return true;
+
+  const ipv4 = host.split(":")[0];
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(ipv4)) {
+    const octets = ipv4.split(".").map(Number);
+    if (octets.length !== 4 || octets.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return true;
+    if (octets[0] === 0 || octets[0] === 10 || octets[0] === 127) return true;
+    if (octets[0] === 169 && octets[1] === 254) return true;
+    if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) return true;
+    if (octets[0] === 192 && octets[1] === 168) return true;
+    if (octets[0] === 100 && octets[1] >= 64 && octets[1] <= 127) return true;
+    if (octets[0] >= 224 && octets[0] <= 239) return true;
+  }
+
+  if (host === "::1" || host.startsWith("[::1]") || host.includes("::ffff:")) return true;
+  return false;
+}
+
+function isAllowedRemoteImageUrl(url) {
+  const direct = validateUrl(url);
+  if (!direct) return false;
+  try {
+    const parsed = new URL(direct);
+    if (!["http:", "https:"].includes(parsed.protocol)) return false;
+    if (isPrivateHostname(parsed.hostname)) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function needsMigration(url) {
   const raw = String(url || "").trim();
   if (!raw) return false;
   const direct = directImageUrl(raw);
-  if (!validateUrl(direct)) return false;
+  if (!isAllowedRemoteImageUrl(direct)) return false;
   if (isSupabaseImage(direct)) return false;
   // Skip video links that happen to live in image_url.
   const looksLikeImage = /\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(direct) || isDriveUrl(raw) || !videoUrl(direct);
@@ -148,6 +182,9 @@ export async function migrateImagesAction(prevState, formData) {
     for (const t of batch) {
       try {
         const direct = directImageUrl(t.url);
+        if (!isAllowedRemoteImageUrl(direct)) {
+          throw new Error("Remote image source is blocked. Use a public https URL.");
+        }
         const res = await fetch(direct, { redirect: "follow" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const type = res.headers.get("content-type") || "image/jpeg";

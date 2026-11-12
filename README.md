@@ -99,7 +99,7 @@ Copy `.env.example` to `.env.local` (gitignored) and fill in real values:
 | `NEXT_PUBLIC_SUPABASE_URL` | public | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | public | Public anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | **server only** | All DB reads/writes — never expose to the browser |
-| `ADMIN_PASS_HASH` | **server only** | Passphrase for `/admin` (a 64-char SHA-256 hex digest, or the plaintext passphrase) |
+| `ADMIN_PASS_HASH` | **server only** | Passphrase hash for `/admin` (must be a 64-char SHA-256 hex digest) |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | public | Fallback WhatsApp number (also editable as a setting) |
 
 Optional: `ADMIN_COOKIE_SECRET` to sign the admin session cookie independently of the passphrase (falls back to `ADMIN_PASS_HASH`).
