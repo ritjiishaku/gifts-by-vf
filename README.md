@@ -12,7 +12,7 @@ Bespoke gifts storefront — customised jewellery, acrylic frames/prints, brand 
 - Server-rendered hero, catalogue, portfolio, Why Us, testimonials, How to Order and FAQ — content comes from Supabase, so the page is fully crawlable (not blank without JS)
 - Product catalogue laid out as editorial collection sections, with keyword search, sorting, per-collection "show more", and hero category cards that jump straight to (and focus) a collection
 - Featured products highlighted within their catalogue group
-- **Featured Books spotlight** under the hero — markets faith/religious books for a partner church: up to 3 book cards, a WhatsApp enquiry CTA, a "browse all books" jump into the catalogue, and an optional partner attribution line (all editable in Admin → Settings → Books section). Books live in a 5th **Books** catalogue category (shown last) and are excluded from the hero category cards.
+- Books (devotionals, Bibles, hymnals, etc.) are listed inside the **More to Love** collection alongside the other personalised gifts — there is no separate books section.
 - Direct **WhatsApp ordering** — every card opens a pre-filled chat with the product, price and sales-rep referral
 - Copy-a-link share buttons for individual products
 - Referral tracking: visitors arriving via `?ref=<rep_id>` are attributed to a sales rep for 30 days

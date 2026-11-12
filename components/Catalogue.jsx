@@ -152,9 +152,9 @@ export function Catalogue({ products, taxonomy, settings }) {
     return () => window.removeEventListener("vf:clear-filters", onClear);
   }, [clearFilters]);
 
-  // Hero category cards and the Books spotlight ask the catalogue to focus a
-  // single collection, then scroll to it. Clearing is handled by the chip below
-  // the catalogue heading ("Show all gifts").
+  // Hero category cards ask the catalogue to focus a single collection, then
+  // scroll to it. Clearing is handled by the chip below the catalogue heading
+  // ("Show all gifts").
   useEffect(() => {
     const onSelect = (event) => {
       const name = String(event?.detail?.category || "").trim();
@@ -172,7 +172,7 @@ export function Catalogue({ products, taxonomy, settings }) {
     return () => window.removeEventListener("vf:select-category", onSelect);
   }, [scrollToCategory]);
 
-  // Support shared /#category-books style links on first load.
+  // Support shared /#category-more-to-love style links on first load.
   useEffect(() => {
     const match = window.location.hash.match(/^#category-(.+)$/);
     if (!match) return;

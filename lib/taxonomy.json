@@ -81,7 +81,7 @@
       "label": "MORE TO LOVE",
       "description": "Explore personalized apparel, accessories, keepsakes, flowers, and more gift ideas.",
       "imageSettingKey": "category_more_to_love_image_url",
-      "legacyAliases": ["more to love", "gifts", "gift items", "personalised gifts", "personalized gifts"],
+      "legacyAliases": ["more to love", "gifts", "gift items", "personalised gifts", "personalized gifts", "books", "book", "bibles", "devotionals", "hymnals", "church books", "religious books", "christian books", "faith books", "devotional books"],
       "productTypes": [
         { "name": "Customized Throw Pillow", "aliases": ["customised throw pillow", "custom pillow"] },
         { "name": "Customized Jersey", "aliases": ["customised jersey"] },
@@ -98,24 +98,14 @@
         { "name": "Customized Face Cap", "aliases": ["customised face cap"] },
         { "name": "Customized Apron", "aliases": ["customised apron"] },
         { "name": "Customized Gift Items", "aliases": ["customised gift item"] },
-        { "name": "And More...", "aliases": ["other customized gift", "other personalised gift"] }
-      ]
-    },
-    {
-      "name": "Books",
-      "label": "BOOKS",
-      "description": "Faith-building books, devotionals and Bibles — meaningful reads for growing personally or blessing someone you love.",
-      "imageSettingKey": "category_books_image_url",
-      "showInHero": false,
-      "legacyAliases": ["church books", "religious books", "christian books", "faith books", "devotional books"],
-      "productTypes": [
         { "name": "Devotional", "aliases": ["devotionals", "daily devotional"] },
         { "name": "Bible", "aliases": ["bibles", "study bible"] },
         { "name": "Hymnal", "aliases": ["hymnals", "hymn book"] },
         { "name": "Christian Living Book", "aliases": ["christian living book"] },
         { "name": "Ministry Book", "aliases": ["ministry resource"] },
         { "name": "Children's Book", "aliases": ["kids book", "children storybook"] },
-        { "name": "Other Books", "aliases": [] }
+        { "name": "Other Books", "aliases": [] },
+        { "name": "And More...", "aliases": ["other customized gift", "other personalised gift"] }
       ]
     }
   ]

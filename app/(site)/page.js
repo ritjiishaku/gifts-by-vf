@@ -11,7 +11,6 @@ import { settingsFromRows, DEFAULTS, SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/si
 import { filterAndSort, priceNumber, isSoldOut, directImageUrl, validateUrl, slugify, serializeJsonLd, siteImageUrl, ogImage } from "@/lib/format";
 import { TAXONOMY } from "@/lib/taxonomy";
 import { Hero } from "@/components/Hero";
-import { BooksSpotlight } from "@/components/BooksSpotlight";
 import { Catalogue } from "@/components/Catalogue";
 import { Section } from "@/components/Section";
 import { Portfolio } from "@/components/Portfolio";
@@ -104,8 +103,6 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(itemListJsonLd) }}
       />
       <Hero settings={settings} products={products} taxonomy={TAXONOMY} />
-
-      <BooksSpotlight settings={settings} products={products} taxonomy={TAXONOMY} />
 
       <Section id="products">
         <Catalogue products={products} taxonomy={TAXONOMY} settings={settings} />

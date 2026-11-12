@@ -74,7 +74,7 @@ export function AdminProductForm({ product, onClose }) {
               name="category"
               list="admin-category-options"
               defaultValue={values?.category ?? product.category ?? ""}
-              placeholder="e.g. Books, Customized Jewelry"
+              placeholder="e.g. More to Love, Customized Jewelry"
             />
             <datalist id="admin-category-options">
               {TAXONOMY.map((category) => (

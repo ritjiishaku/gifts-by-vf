@@ -254,35 +254,6 @@ section { padding: 100px 24px; }
 .category-empty-state .product-order-btn { margin-top: 2px; }
 .product-type-label { margin: 0 0 7px; color: #927445; font-size: .67rem; font-weight: 700; letter-spacing: .35px; }
 
-/* ── BOOKS SPOTLIGHT (compact featured strip under the hero) ── */
-.books-spotlight {
-    padding: clamp(30px, 4.5vw, 52px) clamp(20px, 4vw, 24px);
-    background: linear-gradient(180deg, rgba(201,169,110,.10), rgba(201,169,110,0) 65%);
-    border-bottom: 1px solid rgba(201,169,110,.22);
-}
-.books-spotlight .catalogue-header { margin-bottom: clamp(14px, 2.5vw, 22px); }
-.books-partner {
-    margin: 6px 0 0;
-    color: #755c36;
-    font-size: .82rem;
-    font-weight: 600;
-    letter-spacing: .3px;
-}
-.products-grid.books-spotlight-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 260px));
-    justify-content: center;
-    max-width: 900px;
-    margin: 0 auto;
-}
-.books-spotlight-cta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-top: clamp(16px, 2.5vw, 24px);
-}
-
 /* Editorial category-led catalogue: every product lives in one collection section. */
 #products-grid.products-grid { display:block; margin-top:0; }
 .catalogue-category-section { padding:58px 0 64px; scroll-margin-top:86px; border-top:1px solid rgba(94,75,46,.16); }
